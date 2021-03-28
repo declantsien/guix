@@ -44,6 +44,7 @@
 ;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
 ;;; Copyright © 2021 Xinglu Chen <public@yoctocell.xyz>
 ;;; Copyright © 2021 Thomas Albers Raviola <thomas@thomaslabs.org>
+;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
 ;;; Copyright © 2022, 2023 Sughosha <sughosha@disroot.org>
 ;;; Copyright © 2022 Remco van 't Veer <remco@remworks.net>
 ;;; Copyright © 2022, 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
@@ -861,7 +862,7 @@ many input formats and provides a customisable Vi-style user interface.")
     (native-inputs
      (list diffutils
            `(,glib "bin")               ; for gtester
-           gtk-doc
+           gtk-doc/stable
            intltool
            libtool
            pkg-config))
@@ -5365,7 +5366,7 @@ studio.")
            cunit
            gettext-minimal
            gobject-introspection
-           gtk-doc
+           gtk-doc/stable
            libtool
            libxslt
            pkg-config
