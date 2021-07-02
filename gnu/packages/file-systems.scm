@@ -661,7 +661,8 @@ from a mounted file system.")
                 (list valgrind)
                 '())))
     (inputs
-     (list eudev
+     (list bash-minimal
+           eudev
            keyutils
            libaio
            libscrypt
@@ -1415,6 +1416,7 @@ xfstest's \"~a\" command (with any OPTIONs) as documented below.\n\n"
       (inputs
        (list acl
              attr
+             bash-minimal
              bc
              guile-3.0                  ; for our xfstests-check helper script
              inetutils
