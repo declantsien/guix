@@ -4141,7 +4141,8 @@ NUMA performance on your system.")
     (native-inputs
      (list autoconf pkg-config))
     (inputs
-     `(("bzip2" ,bzip2)
+     `(("bash" ,bash-minimal) ; for wrap-program
+       ("bzip2" ,bzip2)
        ("gzip" ,gzip)
        ("pam" ,linux-pam)
        ("xz" ,xz)
@@ -5287,7 +5288,8 @@ thanks to the use of namespaces.")
                    (string-append (which "env") " "
                                   #$output "/bin/singularity")))))))))
     (inputs
-     (list coreutils
+     (list bash-minimal
+           coreutils
            libarchive
            python-wrapper
            squashfs-tools
@@ -9825,14 +9827,15 @@ headers.")
     (native-inputs
      (list bison flex))
     (inputs
-     `(("clang-toolchain" ,clang-toolchain-9)
-       ("libbpf" ,(package-source libbpf))
-       ;; LibElf required but libelf does not contain
-       ;; archives, only object files.
-       ;; https://github.com/iovisor/bcc/issues/504
-       ("elfutils" ,elfutils)
-       ("luajit" ,luajit)
-       ("python-wrapper" ,python-wrapper)))
+     (list bash-minimal                 ;for wrap-program
+           clang-toolchain-9
+           (package-source libbpf)
+           ;; LibElf required but libelf does not contain
+           ;; archives, only object files.
+           ;; https://github.com/iovisor/bcc/issues/504
+           elfutils
+           luajit
+           python-wrapper))
     (arguments
      `(;; Tests all require root permissions and a "standard" file hierarchy.
        #:tests? #f
@@ -9875,8 +9878,7 @@ headers.")
                                        ,(version-major+minor
                                          (package-version python))
                                        "/site-packages")))))
-                (find-files tools python-executable?))
-               #t))))))
+                (find-files tools python-executable?))))))))
     (home-page "https://github.com/iovisor/bcc")
     (synopsis "Tools for BPF on Linux")
     (description
