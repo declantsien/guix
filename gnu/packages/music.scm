@@ -470,8 +470,7 @@ score, keyboard, guitar, drum and controller views.")
                    (find-files "3rdparty"
                                (lambda (file stat)
                                  (string-match "^3rdparty/[^/]*$" file))
-                               #:directories? #t))
-                  #t))))
+                               #:directories? #t))))))
     (build-system cmake-build-system)
     (arguments
      '(#:test-target "clementine_test"
@@ -493,15 +492,16 @@ score, keyboard, guitar, drum and controller views.")
              (let ((out             (assoc-ref outputs "out"))
                    (gst-plugin-path (getenv "GST_PLUGIN_SYSTEM_PATH")))
                (wrap-program (string-append out "/bin/clementine")
-                 `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,gst-plugin-path)))
-               #t))))))
+                 `("GST_PLUGIN_SYSTEM_PATH" ":" prefix
+                   (,gst-plugin-path)))))))))
     (native-inputs
-     `(("gettext" ,gettext-minimal)
-       ("googletest" ,googletest)
-       ("pkg-config" ,pkg-config)
-       ("qtlinguist" ,qttools-5)))
+     (list gettext-minimal
+           googletest
+           pkg-config
+           qttools-5))
     (inputs
-     (list boost
+     (list bash-minimal
+           boost
            chromaprint
            fftw
            glib
@@ -721,7 +721,8 @@ Winamp/XMMS skins.")
              (setenv "DISPLAY" ":1")
              (setenv "HOME" (getcwd)))))))
     (native-inputs
-     (list gettext-minimal
+     (list bash-minimal
+           gettext-minimal
            googletest
            pkg-config
            qttools
@@ -2233,7 +2234,8 @@ for path in [path for path in sys.path if 'site-packages' in path]: site.addsite
                 (wrap-program (search-input-file outputs "bin/solfege")
                   `("GUIX_PYTHONPATH" ":" prefix (,path)))))))))
     (inputs
-     (list python-wrapper
+     (list bash-minimal
+           python-wrapper
            python-pygobject
            gettext-minimal
            gtk+
@@ -5960,7 +5962,7 @@ console music players.")
              go-github-com-wtolson-go-taglib
              go-github-com-yookoala-realpath))
       (inputs
-       (list chromaprint ffmpeg))
+       (list bash-minimal chromaprint ffmpeg))
       (arguments
        `(#:import-path "gitlab.com/ambrevar/demlo"
          #:phases
@@ -5976,8 +5978,7 @@ console music players.")
                      ,(map (lambda (dir)
                              (string-append dir "/bin:"
                                             dir "/sbin"))
-                           (list ffmpeg chromaprint))))
-                 #t)))
+                           (list ffmpeg chromaprint)))))))
            (add-after 'install 'install-scripts
              (lambda* (#:key outputs #:allow-other-keys)
                (let* ((out (assoc-ref outputs "out"))
@@ -5990,8 +5991,8 @@ console music players.")
                  (install-file (string-append root "/config.lua") xdg-data-dirs)
                  ;; TODO: Test fish completion.
                  (install-file (string-append root "/completion/demlo.fish")
-                               (string-append out "/share/fish/vendor_completions.d"))
-                 #t))))))
+                               (string-append
+                                out "/share/fish/vendor_completions.d"))))))))
       (home-page "https://gitlab.com/ambrevar/demlo")
       (synopsis "Dynamic and extensible music library organizer")
       (description "Demlo is a music library organizer.  It can encode, fix
@@ -6056,6 +6057,7 @@ discard bad quality ones.
                          '("qtmultimedia"))))))))))
     (inputs
      (list alsa-lib
+           bash-minimal
            fftw
            jack-1
            portaudio
@@ -6088,7 +6090,8 @@ with error and volume history, and advanced features.")
     (native-inputs
      (list intltool pkg-config))
     (inputs
-     (list glib
+     (list bash-minimal
+           glib
            grilo
            gstreamer
            gst-plugins-base
@@ -6111,8 +6114,8 @@ with error and volume history, and advanced features.")
              (let ((out (assoc-ref outputs "out"))
                    (gst-plugin-path (getenv "GST_PLUGIN_SYSTEM_PATH")))
                (wrap-program (string-append out "/bin/pragha")
-                 `("GST_PLUGIN_SYSTEM_PATH" ":" prefix (,gst-plugin-path)))
-               #t))))))
+                 `("GST_PLUGIN_SYSTEM_PATH" ":" prefix
+                   (,gst-plugin-path)))))))))
     (home-page "https://pragha-music-player.github.io")
     (synopsis "Music player")
     (description "Pragha is a lightweight music player based on Gtk and
