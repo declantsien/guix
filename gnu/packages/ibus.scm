@@ -46,6 +46,7 @@
   #:use-module (gnu packages autotools)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages base)
+  #:use-module (gnu packages bash)
   #:use-module (gnu packages boost)
   #:use-module (gnu packages check)
   #:use-module (gnu packages cmake)
@@ -318,7 +319,8 @@ may also simplify input method development.")
                                    "/share/ibus-libpinyin/setup/")
                    ,(getenv "GI_TYPELIB_PATH")))))))))
     (inputs
-     (list ibus
+     (list bash-minimal
+           ibus
            libpinyin
            bdb
            sqlite
@@ -439,7 +441,8 @@ Chinese pinyin input methods.")
            util-linux                   ;for getopt
            xorg-server-for-tests))
     (inputs
-     (list anthy
+     (list bash-minimal
+           anthy
            gtk+
            ibus
            gobject-introspection
@@ -891,7 +894,8 @@ hanja dictionary and small hangul character classification.")
        ("gettext" ,gettext-minimal)
        ("glib:bin" ,glib "bin")))
     (inputs
-     (list ibus
+     (list bash-minimal
+           ibus
            glib
            python-pygobject
            gtk+
