@@ -20272,7 +20272,8 @@ hidden.")
          "08gygn9fjank5gpi4v6ynrkn0jbknxbwsn7md4p9ndygdbmnkf98"))))
     (build-system emacs-build-system)
     (inputs
-     (list emacs-ansi
+     (list bash-minimal
+           emacs-ansi
            emacs-commander
            emacs-dash
            emacs-f
@@ -20295,8 +20296,8 @@ hidden.")
                        ;; Do not capture the transient source directory in
                        ;; the wrapper.
                        (delete source-directory
-                               (string-split (getenv "EMACSLOADPATH") #\:))))
-               #t))))
+                               (string-split (getenv "EMACSLOADPATH")
+                                             #\:))))))))
        #:include (cons* "^reporters/.*\\.el$" %default-include)))
     (home-page "https://github.com/rejeep/ert-runner.el")
     (synopsis "Opinionated Ert testing workflow")
@@ -29998,7 +29999,8 @@ asynchronous communications, the RPC response is fairly good.")
                 (file-name (git-file-name name version))))
       (build-system emacs-build-system)
       (inputs
-       (list perl
+       (list bash-minimal
+             perl
              perl-rpc-epc-service
              perl-dbi
              ;; TODO: Adding support for perl-dbd-mysql and others would
@@ -30014,8 +30016,7 @@ asynchronous communications, the RPC response is fairly good.")
              (lambda* (#:key inputs #:allow-other-keys)
                (let ((perl (assoc-ref inputs "perl")))
                  (substitute* "edbi.el"
-                   (("\"perl\"") (string-append "\"" perl "/bin/perl\"")))
-                 #t)))
+                   (("\"perl\"") (string-append "\"" perl "/bin/perl\""))))))
            (add-after 'wrap 'wrap-edbi-bridge
              (lambda* (#:key inputs outputs #:allow-other-keys)
                (let* ((out (assoc-ref outputs "out"))
@@ -30023,8 +30024,7 @@ asynchronous communications, the RPC response is fairly good.")
                                              "/edbi-bridge.pl")))
                  (chmod bridge #o555)
                  (wrap-program bridge
-                   `("PERL5LIB" ":" prefix (,(getenv "PERL5LIB")))))
-               #t)))))
+                   `("PERL5LIB" ":" prefix (,(getenv "PERL5LIB"))))))))))
       (synopsis "Database Interface for Emacs Lisp")
       (description "This program connects the database server through Perl's
 DBI, and provides DB-accessing API and the simple management UI.")
