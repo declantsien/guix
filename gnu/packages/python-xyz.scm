@@ -33078,8 +33078,7 @@ CMake.")
                             (string-append x11 "/lib/libX11.so.6")))
               (substitute* "Screenkey/xlib.py"
                            (("libXtst.so.6")
-                            (string-append xtst "/lib/libXtst.so.6")))
-              #t)))
+                            (string-append xtst "/lib/libXtst.so.6"))))))
           (add-after 'install 'wrap-screenkey
             (lambda* (#:key outputs #:allow-other-keys)
               (wrap-program
@@ -33088,7 +33087,8 @@ CMake.")
                 `("GI_TYPELIB_PATH"
                   ":" prefix (,(getenv "GI_TYPELIB_PATH")))))))))
     (inputs
-     (list python-distutils-extra
+     (list bash-minimal
+           python-distutils-extra
            python-tokenize-rt
            libx11
            libxtst
