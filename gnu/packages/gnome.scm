@@ -6725,7 +6725,8 @@ discovery protocols.")
     (propagated-inputs
      (list dconf))
     (inputs
-     (list gtk+
+     (list bash-minimal
+           gtk+
            gdk-pixbuf
            at-spi2-core
            cairo
@@ -7327,7 +7328,8 @@ principles are simplicity and standards compliance.")
            python-pep8
            xorg-server-for-tests))
     (inputs
-     (list gobject-introspection
+     (list bash-minimal
+           gobject-introspection
            gtk+
            python-wrapper
            python-pygobject))
@@ -7728,7 +7730,8 @@ such as gzip tarballs.")
            pkg-config
            xmlto))
     (inputs
-     (list elogind
+     (list bash-minimal
+           elogind
            gnome-desktop
            gsettings-desktop-schemas
            gtk+
@@ -8365,7 +8368,8 @@ Evolution (hence the name), but is now used by other packages as well.")
      ;; caribou-1.0.pc refers to all these.
      (list libgee libxklavier libxtst gtk+))
     (inputs
-     `(("clutter" ,clutter)
+     `(("bash" ,bash-minimal) ; for wrap-program
+       ("clutter" ,clutter)
        ("dconf" ,dconf)
        ("gtk+-2" ,gtk+-2)
        ("python-pygobject" ,python-pygobject)))
@@ -10443,7 +10447,8 @@ specified duration and save it as a GIF encoded animated image file.")
            `(,gtk+ "bin")
            pkg-config))
     (inputs
-     (list gsettings-desktop-schemas
+     (list bash-minimal
+           gsettings-desktop-schemas
            gtk+
            libhandy-0.0
            libsecret
@@ -11822,7 +11827,12 @@ mp3, Ogg Vorbis and FLAC")
        ("pkg-config" ,pkg-config)
        ("glib:bin" ,glib "bin")))
     (inputs
-     (list gtk+ python python-pygobject gstreamer gst-plugins-base))
+     (list bash-minimal
+           gtk+
+           python
+           python-pygobject
+           gstreamer
+           gst-plugins-base))
     (home-page "https://soundconverter.org/")
     (synopsis "Convert between audio formats with a graphical interface")
     (description
@@ -12107,7 +12117,8 @@ advanced image management tool")
        ("python-pytest-runner" ,python-pytest-runner)
        ("python-pytest" ,python-pytest)))
     (inputs
-     `(("cairo" ,cairo)
+     `(("bash" ,bash-minimal) ; for wrap-program
+       ("cairo" ,cairo)
        ("dbus-glib" ,dbus-glib)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
        ("gtk+" ,gtk+)
@@ -12291,7 +12302,8 @@ higher level porcelain stuff.")
                 (wrap-program prog
                   `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH"))))))))))
     (inputs
-     (list glib
+     (list bash-minimal
+           glib
            gpgme
            gsettings-desktop-schemas
            gspell
@@ -12982,7 +12994,8 @@ It uses pandoc as back-end for parsing Markdown.")
          (list valgrind)
          '())))
     (inputs
-     `(("glib" ,glib)
+     `(("bash" ,bash-minimal) ; for wrap-program
+       ("glib" ,glib)
        ("json-glib" ,json-glib)
        ("libevdev" ,libevdev)
        ("libsystemd" ,elogind)
@@ -13053,7 +13066,8 @@ your operating-system definition:
            gobject-introspection
            pkg-config))
     (inputs
-     (list adwaita-icon-theme
+     (list bash-minimal
+           adwaita-icon-theme
            gtk+
            guile-3.0                    ;for wrap-script
            libratbag
@@ -13154,7 +13168,8 @@ provided there is a DBus service present:
            pkg-config
            yelp-tools))
     (inputs
-     (list gst-plugins-base
+     (list bash-minimal
+           gst-plugins-base
            gst-plugins-good
            gstreamer
            gtk+
@@ -13663,7 +13678,8 @@ world.")
        ("pkg-config" ,pkg-config)
        ("xmllint" ,libxml2)))
     (inputs
-     `(("enchant" ,enchant)
+     `(("bash" ,bash-minimal) ; for wrap-program
+       ("enchant" ,enchant)
        ("glib" ,glib)
        ("goocanvas" ,goocanvas)
        ("gtk" ,gtk+)
