@@ -2657,7 +2657,6 @@ GNOME Desktop.")
            gettext-minimal
            `(,glib "bin")
            glib                         ;for m4 macros
-           libxml2                      ;for XML_CATALOG_FILES
            libxslt                      ;for documentation
            pkg-config
            python-wrapper))             ;for tests
@@ -3269,7 +3268,6 @@ API add-ons to make GTK+ widgets OpenGL-capable.")
            gobject-introspection
            hicolor-icon-theme
            itstool
-           libxml2                      ;for XML_CATALOG_FILES
            libxslt                      ;for xsltproc
            python
            python-pygobject
@@ -4749,7 +4747,6 @@ and RDP protocols.")
     (native-inputs
      (list bash-completion
            libxslt                      ;for xsltproc
-           libxml2                      ;for XML_CATALOG_FILES
            docbook-xml-4.2
            docbook-xsl
            `(,glib "bin")
@@ -5263,7 +5260,6 @@ and the GLib main loop, to integrate well with GNOME applications.")
            gettext-minimal
            `(,glib "bin")               ;for gdbus-codegen, etc.
            gobject-introspection
-           libxml2                      ;for XML_CATALOG_FILES
            libxslt
            pkg-config
            python
@@ -5722,7 +5718,6 @@ output devices.")
        (append bash-completion
                docbook-xsl-1.79.1
                gtk-doc/stable
-               libxml2                  ;for XML_CATALOG_FILES
                libxslt
                sane-backends
                vala)))))                ;for VAPI, needed by simple-scan
@@ -5891,8 +5886,7 @@ faster results and to avoid unnecessary server load.")
            dbus
            ;; For man pages.
            docbook-xsl
-           libxslt                      ; for 'xsltproc'
-           libxml2))                    ; for 'XML_CATALOG_FILES'
+           libxslt))                    ; for 'xsltproc'
     (inputs
      (list libgudev libusb))
     (propagated-inputs
@@ -6065,7 +6059,6 @@ services for numerous locations.")
            docbook-xsl
            gettext-minimal
            `(,glib "bin")               ;for glib-mkenums
-           libxml2                      ;for XML_CATALOG_FILES
            libxslt
            perl
            pkg-config))
