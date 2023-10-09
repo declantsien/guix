@@ -1290,7 +1290,7 @@ Gerbil code within Emacs.")))
     (arguments
      (list
       #:modules `((ice-9 ftw)
-                  ,@%default-gnu-imported-modules)
+                  ,@%default-gnu-modules)
       #:phases
       #~(modify-phases %standard-phases
           (add-before 'configure 'patch-sh-references
