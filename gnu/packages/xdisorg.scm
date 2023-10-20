@@ -1727,7 +1727,8 @@ to an arbitrary balanced color.")
            libtool
            pkg-config))
     (inputs
-     (list glib
+     (list bash-minimal
+           glib
            gtk+
            libappindicator
            libdrm
