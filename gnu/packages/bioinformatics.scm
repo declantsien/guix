@@ -13012,7 +13012,8 @@ data.  It also generates basic statistics for your sequences.")
              (when tests?
                (invoke "make" "check")))))))
     (inputs
-     (list boost
+     (list bash-minimal
+           boost
            htslib
            python
            python-biopython
