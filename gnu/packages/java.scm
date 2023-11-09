@@ -747,6 +747,7 @@ IcedTea build harness.")
                    ,@(if ,(target-ppc32?)
                        `("--enable-jfr=no")
                        '())
+                   "--disable-docs"     ; This phase can take hours on slow machines.
                    "--disable-downloading"
                    "--disable-system-pcsc"
                    "--disable-system-sctp"
