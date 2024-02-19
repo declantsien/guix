@@ -394,7 +394,8 @@ objects!")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0ai91c567c5z560s4zjgjclgca1pm61h8cb8c8q84wg3xvkhmc9x"))))
+                "0ai91c567c5z560s4zjgjclgca1pm61h8cb8c8q84wg3xvkhmc9x"))
+              (patches (search-patches "autotrace-pkg-config.patch"))))
     (build-system gnu-build-system)
     (arguments
      (list #:configure-flags #~'("--disable-static")

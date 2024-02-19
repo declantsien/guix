@@ -971,6 +971,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/audiofile-hurd.patch 			\
   %D%/packages/patches/audiofile-function-signature.patch	\
   %D%/packages/patches/automake-skip-amhello-tests.patch	\
+  %D%/packages/patches/autotrace-pkg-config.patch		\
   %D%/packages/patches/avahi-localstatedir.patch		\
   %D%/packages/patches/avalon-toolkit-rdkit-fixes.patch		\
   %D%/packages/patches/avidemux-install-to-lib.patch		\
