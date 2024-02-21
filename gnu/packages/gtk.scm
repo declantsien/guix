@@ -24,7 +24,7 @@
 ;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2020 Brendan Tildesley <mail@brendan.scot>
 ;;; Copyright © 2020 Guillaume Le Vaillant <glv@posteo.net>
-;;; Copyright © 2020, 2021, 2022, 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2020, 2021, 2022, 2023, 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2021 Simon Streit <simon@netpanic.org>
 ;;; Copyright © 2021 Maxime Devos <maximedevos@telenet.be>
@@ -1904,11 +1904,11 @@ tutorial.")
        (sha256
         (base32 "1i4ql0j6id6g34w5nbhd7vjak7l3s50lqgdjaj2ranrfj9j0r56j"))))
     (propagated-inputs
-     `(("atkmm-2.28" ,atkmm-2.28)
-       ("cairomm-1.14" ,cairomm-1.14)
-       ("glibmm" ,glibmm)
-       ("gtk+" ,gtk+)
-       ("pangomm-2.42" ,pangomm-2.46)))))
+     (list atkmm-2.28
+           cairomm-1.14
+           glibmm
+           gtk+
+           pangomm-2.46))))
 
 (define-public gtkmm-2
   (package
