@@ -10,7 +10,7 @@
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2016 Sou Bunnbu <iyzsong@gmail.com>
 ;;; Copyright © 2016 Jelle Licht <jlicht@fsfe.org>
-;;; Copyright © 2016-2023 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016-2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Rene Saavedra <rennes@openmailbox.org>
 ;;; Copyright © 2016 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2016, 2023 Clément Lassieur <clement@lassieur.org>
@@ -458,24 +458,24 @@ replacing them with data URIs.")
 (define-public monolith
   (package
     (name "monolith")
-    (version "2.7.0")
+    (version "2.8.1")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
-             (url "https://github.com/Y2Z/monolith.git")
+             (url "https://github.com/Y2Z/monolith")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ccwjsp8gdgp0wafc3zvlfmx3f58axc1k1ac80qha3g60xccqn56"))))
+        (base32 "0xr63302yb5k9c2sihd1iy97j5c44d4jrzfaiwm81d9li577ih58"))))
     (build-system cargo-build-system)
     (arguments
      `(#:cargo-inputs
        (("rust-atty" ,rust-atty-0.2)
-        ("rust-base64" ,rust-base64-0.13)
+        ("rust-base64" ,rust-base64-0.21)
         ("rust-chrono" ,rust-chrono-0.4)
         ("rust-clap" ,rust-clap-3)
-        ("rust-cssparser" ,rust-cssparser-0.29)
+        ("rust-cssparser" ,rust-cssparser-0.33)
         ("rust-encoding-rs" ,rust-encoding-rs-0.8)
         ("rust-html5ever" ,rust-html5ever-0.24)
         ("rust-percent-encoding" ,rust-percent-encoding-2)
