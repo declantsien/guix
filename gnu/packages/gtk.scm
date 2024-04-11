@@ -686,7 +686,7 @@ highlighting and other features typical of a source code editor.")
 (define-public gdk-pixbuf
   (package
     (name "gdk-pixbuf")
-    (version "2.42.8")
+    (version "2.42.10")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -694,7 +694,7 @@ highlighting and other features typical of a source code editor.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1iplb43nn74pp3w1wjwwn522i9man6jia85k6j8v4494rcxfmb44"))))
+                "0jz4kziz5lirnjjvbspbqzsigk8vnqknng1fga89d81vs5snr6zf"))))
     (build-system meson-build-system)
     (outputs '("out" "debug"))
     (arguments
@@ -709,36 +709,32 @@ highlighting and other features typical of a source code editor.")
              (substitute* "tests/pixbuf-jpeg.c"
                ((".*/pixbuf/jpeg/issue205.*")
                 ""))))
-         ;; The slow tests take longer than the specified timeout.
-         ,@(if (target-arm? (%current-system))
-               '((replace 'check
-                   (lambda* (#:key tests? #:allow-other-keys)
-                     (when tests?
-                       (invoke "meson" "test" "--timeout-multiplier" "5")))))
-               '()))))
+         (replace 'check
+           (lambda* (#:key tests? #:allow-other-keys)
+             (when tests?
+               (invoke "meson" "test"
+                       ;; Explicit which test suites to run, to avoid running
+                       ;; the slow tests, which easily time out on slower
+                       ;; machines (it'd be nicer to negate the 'slow' suite,
+                       ;; but Meson doesn't support that).
+                       "--suite=conform"
+                       "--suite=io"
+                       "--suite=security"
+                       "--suite=ops")))))))
     (propagated-inputs
      (list glib                         ;in Requires of gdk-pixbuf-2.0.pc
-
-           ;; These are in Requires.private of gdk-pixbuf-2.0.pc
            libjpeg-turbo
            libpng
            libtiff
-           shared-mime-info))           ;required at runtime, too
-    (inputs
-     (if (%current-target-system)
-         (list bash-minimal)            ;for glib-or-gtk-wrap
-         '()))
+           shared-mime-info))           ;required at runtime
+    (inputs (list bash-minimal))        ;for glib-or-gtk-wrap
     (native-inputs
      (list gettext-minimal
            `(,glib "bin")               ;glib-mkenums, etc.
+           gi-docgen
            gobject-introspection        ;g-ir-compiler, etc.
-           perl
            pkg-config
-
-           ;; For the documentation.
-           docbook-xml-4.3
-           docbook-xsl
-           libxslt))                    ;for xsltproc
+           python-docutils))
     (native-search-paths
      ;; This file is produced by the gdk-pixbuf-loaders-cache-file
      ;; profile hook.
