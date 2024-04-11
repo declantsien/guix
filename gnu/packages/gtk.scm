@@ -163,7 +163,7 @@ such as mate-panel and xfce4-panel.")
 (define-public cairo
   (package
     (name "cairo")
-    (version "1.16.0")
+    (version "1.18.0")
     (source
      (origin
        (method url-fetch)
@@ -171,30 +171,12 @@ such as mate-panel and xfce4-panel.")
         (string-append "https://cairographics.org/releases/cairo-"
                        version ".tar.xz"))
        (sha256
-        (base32 "0c930mk5xr2bshbdljv005j3j8zr47gqmkry3q6qgvqky6rjjysy"))
-       (patches (search-patches
-		 "cairo-CVE-2018-19876.patch"
-		 "cairo-CVE-2020-35492.patch"))))
-    (build-system glib-or-gtk-build-system)
-    (outputs '("out" "doc"))
+        (base32 "0r0by563s75xyzz0d0j1nmjqmdrk2x9agk7r57p3v8vqp4v0ffi4"))))
+    (build-system meson-build-system)
     (arguments
-     (list
-      #:tests? #f ; see http://lists.gnu.org/archive/html/bug-guix/2013-06/msg00085.html
-      #:configure-flags
-      #~(list
-         "--disable-static"
-         ;; XXX: To be enabled.
-         ;; "--enable-gallium=yes"
-         ;; "--enable-gl=yes"
-         ;; " --enable-glesv2=yes"
-         ;; "--enable-glesv3=yes"
-         ;; "--enable-cogl=yes"
-         ;; "--enable-directfb=yes"
-         ;; "--enable-vg=yes"
-         "--enable-tee=yes"             ;needed for GNU IceCat
-         "--enable-xml=yes"             ;for cairo-xml support
-         (string-append "--with-html-dir=" #$output:doc
-                        "/share/gtk-doc/html"))))
+     ;; XXX: Building the tests fail with "test/ps2png.c:29:10: fatal error:
+     ;; cairo.h: No such file or directory".
+     (list #:configure-flags #~(list "-Dtests=disabled")))
     (native-inputs
      (append (list pkg-config
                    python-wrapper)
