@@ -180,36 +180,36 @@ such as mate-panel and xfce4-panel.")
         (base32 "0r0by563s75xyzz0d0j1nmjqmdrk2x9agk7r57p3v8vqp4v0ffi4"))))
     (build-system meson-build-system)
     (arguments
-     `(#:tests? #f ; see http://lists.gnu.org/archive/html/bug-guix/2013-06/msg00085.html
-       #:glib-or-gtk? #t
-       #:configure-flags
-       (list "-Dtests=disabled")))
+     (list
+      #:tests? #f ; see http://lists.gnu.org/archive/html/bug-guix/2013-06/msg00085.html
+      #:glib-or-gtk? #t
+      #:configure-flags
+      #~(list "-Dtests=disabled")))
     (native-inputs
-     `(,@(if (target-hurd?)
-             '()
-             `(("gobject-introspection" ,gobject-introspection)))
-       ("pkg-config" ,pkg-config)
-       ("python" ,python-wrapper)))
+     (append (list pkg-config
+                   python-wrapper)
+             (if (target-hurd?)
+                 '()
+                 (list gobject-introspection))))
     (inputs
-     `(("bash-minimal" ,bash-minimal)   ;for glib-or-gtk-wrap
-       ,@(if (target-hurd?)
-             '()
-             `(("drm" ,libdrm)))
-       ("ghostscript" ,ghostscript)
-       ("libspectre" ,libspectre)
-       ,@(if (target-hurd?)
-             '()
-             `(("poppler" ,poppler)))))
+     (append
+      (list bash-minimal                ;for glib-or-gtk-wrap
+            ghostscript
+            libspectre)
+      (if (target-hurd?)
+          '()
+          (list libdrm
+                poppler))))
     (propagated-inputs
-     `(("fontconfig" ,fontconfig)
-       ("freetype" ,freetype)
-       ("glib" ,glib)
-       ("libpng" ,libpng)
-       ("pixman" ,pixman)
-       ("x11" ,libx11)
-       ("xcb" ,libxcb)
-       ("xext" ,libxext)
-       ("xrender" ,libxrender)))
+     (list fontconfig
+           freetype
+           glib
+           libpng
+           pixman
+           libx11
+           libxcb
+           libxext
+           libxrender))
     (synopsis "Multi-platform 2D graphics library")
     (description "Cairo is a 2D graphics library with support for multiple output
 devices.  Currently supported output targets include the X Window System (via
