@@ -6,7 +6,7 @@
 ;;; Copyright © 2016, 2022-2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016-2020, 2022 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2019 Tobias Geerinckx-Rice <me@tobias.gr>
-;;; Copyright © 2019, 2021, 2022, 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;;; Copyright © 2019, 2021, 2022, 2023, 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2019 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2020 Pierre Langlois <pierre.langlois@gmx.com>
 ;;; Copyright © 2020, 2021, 2022, 2023, 2024 Vinicius Monego <monego@posteo.net>
@@ -23,6 +23,7 @@
 ;;; Copyright © 2022 Antero Mejr <antero@mailbox.org>
 ;;; Copyright © 2022 jgart <jgart@dismail.de>
 ;;; Copyright © 2023, 2024 Troy Figiel <troy@troyfigiel.com>
+;;; Copyright © 2024 Sharlatan Hellseher <sharlatanus@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1435,31 +1436,15 @@ for handling arrays and scalars with units,respectively")
 (define-public python-upsetplot
   (package
     (name "python-upsetplot")
-    (version "0.6.0")
+    (version "0.9.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "UpSetPlot" version))
        (sha256
         (base32
-         "11zrykwnb00w5spx4mnsnm0f9gwrphdczainpmwkyyi50vipaa2l"))
-       (modules '((guix build utils)))
-       (snippet
-        ;; Patch for compatibility with newer setuptools:
-        ;; https://github.com/jnothman/UpSetPlot/pull/178
-        '(substitute* "upsetplot/data.py"
-           (("import distutils")
-            "from distutils.version import LooseVersion")
-           (("if distutils\\.version\\.LooseVersion")
-            "if LooseVersion")))))
-    (build-system python-build-system)
-    (arguments
-     '(#:phases
-       (modify-phases %standard-phases
-         (replace 'check
-           (lambda* (#:key tests? #:allow-other-keys)
-             (when tests?
-               (invoke "pytest" "-v" "--doctest-modules")))))))
+         "14l5gcj88cclkj1mf74bcy1pxq1hgsiy27fa3vxrsk32ik1nmdwm"))))
+    (build-system pyproject-build-system)
     (propagated-inputs
      (list python-matplotlib python-pandas))
     (native-inputs
@@ -1814,7 +1799,10 @@ Mathematics (GLM) library to Python.")
               ;; These tests are rather flaky
               " and not test_quiet_quit_when_cluster_leaves"
               " and not multiple_clients_restart"
-              " and not test_steal_twice"))
+              " and not test_steal_twice"
+              " and not test_task_groups_update_start_stop"
+              " and not test_web_preload"
+              " and not test_web_preload_worker"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'versioneer
@@ -1889,10 +1877,10 @@ parentdir_prefix = distributed-
            python-urllib3
            python-zict))
     (native-inputs
-     (list python-importlib-metadata
+     (list python-flaky
+           python-importlib-metadata
            python-pytest
            python-pytest-timeout
-           python-flaky
            python-versioneer))
     (home-page "https://distributed.dask.org")
     (synopsis "Distributed scheduler for Dask")
@@ -2297,6 +2285,26 @@ for parameterized model creation and handling.  Its features include:
      "@command{GPy} is a Gaussian Process (GP) framework written in
 Python, from the Sheffield machine learning group.  GPy implements a range of
 machine learning algorithms based on GPs.")
+    (license license:bsd-3)))
+
+(define-public python-pods
+  (package
+    (name "python-pods")
+    (version "0.1.14")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "pods" version))
+       (sha256
+        (base32 "157xxs12qbnz1g6agy0a4dqhsa4msbqryrxpg5w3r3pb8gxdl4dh"))))
+    (build-system pyproject-build-system)
+    (arguments (list #:tests? #f))      ;no test suite
+    (propagated-inputs (list python-pandas python-pyyaml python-scipy
+                             python-tables))
+    (home-page "https://github.com/lawrennd/ods")
+    (synopsis "Python software for Open Data Science")
+    (description "This package provides utilities and tools for open data
+science including tools for accessing data sets in Python.")
     (license license:bsd-3)))
 
 (define-public python-pyfma

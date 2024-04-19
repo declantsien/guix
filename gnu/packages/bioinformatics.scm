@@ -97,6 +97,7 @@
   #:use-module (gnu packages golang-build)
   #:use-module (gnu packages golang-check)
   #:use-module (gnu packages golang-compression)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages graph)
   #:use-module (gnu packages graphics)
@@ -4617,7 +4618,7 @@ interval trees with associated meta-data.  It is primarily used by the
 (define-public python-deeptools
   (package
     (name "python-deeptools")
-    (version "3.4.3")
+    (version "3.5.5")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4626,8 +4627,23 @@ interval trees with associated meta-data.  It is primarily used by the
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0l09vyynz6s6w7fnyd94rpys4a6aja6kp4gli64pngdxdz3md1nl"))))
-    (build-system python-build-system)
+                "0mgcs03amrd5157drbm6ikdg0m0szrn9xbflariz2zrrnqpsai6s"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'fix-test
+            (lambda _
+              (substitute* "deeptools/test/test_tools.py"
+                (("e_ver = _p")
+                 "e_ver = \".\" + _p + \"-real\""))
+              (substitute* "deeptools/multiBigwigSummary.py"
+                (("version='multiBigwigSummary")
+                 "version='%(prog)s"))
+              (substitute* "deeptools/plotCoverage.py"
+                (("version='plotCoverage")
+                 "version='%(prog)s")))))))
     (native-inputs
      (list python-mock python-nose))
     (propagated-inputs
@@ -4639,7 +4655,7 @@ interval trees with associated meta-data.  It is primarily used by the
            python-pysam
            python-scipy
            python-deeptoolsintervals
-           python-plotly-2.4.1))
+           python-plotly))
     (home-page "https://pypi.org/project/deepTools/")
     (synopsis "Useful tools for exploring deep sequencing data")
     (description "This package addresses the challenge of handling large amounts
@@ -5837,7 +5853,7 @@ of nucleic acid binding proteins.")
                          (find-files "../bin" ".*"))
                #t))))))
     (inputs
-     (list gsl lapack openblas perl
+     (list gsl openblas perl
            `(,gfortran "lib")))
     (home-page "https://github.com/DReichLab/EIG")
     (synopsis "Tools for population genetics")
@@ -8669,7 +8685,9 @@ predicts the locations of structural units in the sequences.")
              (substitute* "Makefile"
                (("INSTALLDIR=.*")
                 (string-append
-                 "INSTALLDIR=" (assoc-ref outputs "out") "/bin\n")))))
+                 "INSTALLDIR=" (assoc-ref outputs "out") "/bin\n"))
+               (("-llapack -lblas")
+                "-lopenblas"))))
          (add-before 'install 'make-install-directory
            ;; The install directory is not created during 'make install'.
            (lambda* (#:key outputs #:allow-other-keys)
@@ -9654,8 +9672,8 @@ accessed/downloaded on demand across HTTP.")
     (arguments
      `(#:tests? #f ;no "check" target
        #:make-flags ,#~(list (string-append "LIB_LAPACK="
-                                            #$(this-package-input "lapack")
-                                            "/lib/liblapack.so")
+                                            #$(this-package-input "openblas")
+                                            "/lib/libopenblas.so")
                              "WITH_LAPACK=1"
                              "FORCE_DYNAMIC=1"
                              ;; disable phoning home
@@ -9670,7 +9688,7 @@ accessed/downloaded on demand across HTTP.")
                                        "/bin/")))
                (install-file "plink" bin)))))))
     (inputs
-     (list zlib lapack))
+     (list zlib openblas))
     (native-inputs
      (list unzip gcc-8))
     (home-page "http://pngu.mgh.harvard.edu/~purcell/plink/")
@@ -9705,7 +9723,7 @@ subsequent visualization, annotation and storage of results.")
      (list
       #:tests? #false ;TEST_EXTRACT_CHR doesn't produce expected files
       #:make-flags
-      #~(list "BLASFLAGS=-llapack -lopenblas"
+      #~(list "BLASFLAGS=-lopenblas"
               "NO_SSE42=1"
               "NO_AVX2=1"
               "STATIC_ZSTD="
@@ -9732,7 +9750,7 @@ subsequent visualization, annotation and storage of results.")
                            (string-append
                             (assoc-ref outputs "out") "/bin")))))))
     (inputs
-     (list lapack openblas zlib `(,zstd "lib")))
+     (list openblas zlib `(,zstd "lib")))
     (native-inputs
      (list diffutils plink python simde)) ; for tests
     (home-page "https://www.cog-genomics.org/plink/")

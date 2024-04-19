@@ -223,7 +223,7 @@ moment, supported SPICE files are:
 (define-public calcmysky
   (package
     (name "calcmysky")
-    (version "0.3.1")
+    (version "0.3.2")
     (source
      (origin
        (method git-fetch)
@@ -232,7 +232,7 @@ moment, supported SPICE files are:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "14jbaf9m9wig2bs7a531dvpmdkqpd09lmyvjvj1s0mhgh9g0x9m2"))))
+        (base32 "1kybjlddrm8x4x5y82qczi6z1d2riv6zcfjzrh7pzg2vwj89izh0"))))
     (build-system cmake-build-system)
     (arguments
      (list #:configure-flags
@@ -323,7 +323,6 @@ rendering of the atmosphere model and examine its properties.
            gsl
            gtkmm-3
            hdf5
-           lapack
            libpng
            libsigc++
            libxml2
@@ -411,7 +410,6 @@ wide set of telescopes.")
            fftwf
            gfortran
            hdf5
-           lapack
            ncurses
            openblas
            python
@@ -709,13 +707,13 @@ series in Python.")
 (define-public python-ginga
   (package
     (name "python-ginga")
-    (version "4.1.1")
+    (version "5.0.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "ginga" version))
        (sha256
-        (base32 "0w60w9d2yqhbmggp0dljj5a0sk07gywifjq8nzw3y2v47vzgwqb6"))))
+        (base32 "1kydi6qqsscgsa55fa2za35vr5j8xjn09lfbnb5ajr8yxdgm4n3y"))))
     (build-system pyproject-build-system)
     (propagated-inputs
      (list ;;python-exifread  ; optional, not packed yet in Guix
@@ -1203,7 +1201,7 @@ image formats.")
 (define-public splash
   (package
     (name "splash")
-    (version "3.10.1")
+    (version "3.10.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1211,7 +1209,7 @@ image formats.")
                     (commit (string-append "v" version))))
               (sha256
                (base32
-                "1cyg7my2lbpai81nfnlj0r7pvral3kjn31dcq2p4982d2xg0dj87"))
+                "077s9if7fmccvhsbp0dhvyqcil46vpbgdm1y6qn6h34r8lfqj9z6"))
               (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -1390,7 +1388,7 @@ deconvolution).  Such post-processing is not performed by Stackistry.")
            qtmultimedia-5
            qtpositioning
            qtscript
-           qtserialport
+           qtserialport-5
            qttranslations
            qtwebengine-5
            qxlsx-qt5
@@ -1698,13 +1696,13 @@ astronomy and astrophysics.")
     ;; In case of changing the source method git-fetch, consider to check the
     ;; tag as it's not following the PyPI version, see
     ;; <https://github.com/astropy/astropy-iers-data/issues/17>.
-    (version "0.2024.2.19.0.28.47")
+    (version "0.2024.3.18.0.29.47")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "astropy-iers-data" version))
        (sha256
-        (base32 "0j42hkl8z42x5n3aacld9cvacjzg79lqsivm3xn6bv1gjgy69br9"))))
+        (base32 "1mf03iqw09rp6d8hbby33f4jwfjan9gkb1z7xqsjr2jpj7zwpn3y"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -1736,37 +1734,120 @@ Dates (astropy.time)} to provide UT1 values, and the polar motions are used in
 celestial-to-terrestrial coordinate transformations.")
     (license license:bsd-3)))
 
+(define-public python-astroplan
+  (package
+    (name "python-astroplan")
+    (version "0.9.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "astroplan" version))
+       (sha256
+        (base32 "0jrgii0f11ckxvywinr9kcsljxnpnkh7hv5638wxwcb1iyjmx36r"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list
+      #:test-flags
+      #~(list "astroplan/tests"
+              "-k" (string-append
+                    ;; Test requiring newer python-pytz
+                    "not test_timezone"
+                    ;; Disable tests requiring remote data.
+                    " and not test_FixedTarget_from_name"
+                    " and not test_altitude_constraint"
+                    " and not test_at_night_basic"
+                    " and not test_caches_shapes"
+                    " and not test_compare_airmass_constraint_and_observer"
+                    " and not test_compare_altitude_constraint_and_observer"
+                    " and not test_docs_example"
+                    " and not test_eclipses"
+                    " and not test_eq_observer"
+                    " and not test_event_observable"
+                    " and not test_galactic_plane_separation"
+                    " and not test_get_skycoord"
+                    " and not test_hash_observer"
+                    " and not test_is_night"
+                    " and not test_local_time_constraint_hawaii_tz"
+                    " and not test_local_time_constraint_utc"
+                    " and not test_moon_illumination"
+                    " and not test_moon_separation"
+                    " and not test_observability_table"
+                    " and not test_observer_lon_lat_el"
+                    " and not test_regression_airmass_141"
+                    " and not test_regression_shapes"
+                    " and not test_sun_separation"
+                    " and not test_tonight")
+              "--ignore=astroplan/tests/test_scheduling.py")
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-before 'check 'prepare-test-environment
+            (lambda _
+              (setenv "HOME" "/tmp")
+              (invoke "python" "setup.py" "build_ext" "--inplace"))))))
+    (propagated-inputs
+     (list python-astropy
+           python-astroquery
+           python-matplotlib
+           python-numpy
+           python-pytz
+           python-six))
+    (native-inputs
+     (list python-pytest-astropy
+           python-pytest-mpl
+           python-setuptools-scm))
+    (home-page "https://github.com/astropy/astroplan")
+    (synopsis "Observation planning package for astronomers")
+    (description
+     "This package provides a flexible toolbox for observation planning and
+scheduling.  When complete, the goal is to be easy for Python beginners and new
+observers to to pick up, but powerful enough for observatories preparing nightly
+and long-term schedules.
+
+Features:
+@itemize
+@item calculate rise/set/meridian transit times, alt/az positions for targets at
+observatories anywhere on Earth
+@item built-in plotting convenience functions for standard observation planning
+plots (airmass, parallactic angle, sky maps)
+@item determining observability of sets of targets given an arbitrary set of
+constraints (i.e., altitude, airmass, moon separation/illumination, etc.)
+@end itemize")
+      (license license:bsd-3)))
+
 (define-public python-astroquery
   (package
     (name "python-astroquery")
-    (version "0.4.6")
+    (version "0.4.7")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "astroquery" version))
        (sha256
-        (base32 "1vhkzsqlgn3ji5by2rdf2gwklhbyzvpzb1iglalhqjkkrdaaaz1h"))))
+        (base32 "1jbyfhqk74wsdjxzqi0hcrgc7ha4q8cyjx96nv6w9bjg1b5vlzq4"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
       #~(list "--pyargs" "astroquery"
-              "-m" "not remote_data")
+              "-m" "not remote_data"
+              ;; Some tests failed with parallel run, see
+              ;; <https://github.com/astropy/astroquery/issues/2968>.
+              ;; "-n" "auto"
+              "-k" (string-append
+                    ;; Failed: DID NOT RAISE <class
+                    ;; 'astropy.utils.exceptions.AstropyDeprecationWarning'>
+                    "not test_raises_deprecation_warning"))
       #:phases
       #~(modify-phases %standard-phases
-          (add-before 'check 'prepare-test-environment
-            (lambda _
-              (setenv "HOME" (getcwd)) ; some tests need a writable home
-              ;; To solve pytest/conftest issue. Pytest tries to load all
-              ;; files with word 'test' in them.
-              ;;
-              ;; ImportError while loading conftest ...
-              ;; _pytest.pathlib.ImportPathMismatchError: ...
-              ;;
-              (call-with-output-file "pytest.ini"
-                (lambda (port)
-                  (format port "[pytest]
-python_files = test_*.py"))))))))
+          (replace 'check
+            (lambda* (#:key tests? test-flags #:allow-other-keys)
+              (when tests?
+                ;; Some tests require write access to $HOME.
+                (setenv "HOME" "/tmp")
+                ;; Step out of the source directory to avoid interference;
+                ;; we want to run the installed code with extensions etc.
+                (with-directory-excursion "/tmp"
+                  (apply invoke "pytest" "-v" test-flags))))))))
     (propagated-inputs
      (list python-astropy
            python-beautifulsoup4
@@ -1927,22 +2008,19 @@ bad pixel tracking throughout the reduction process.")
 (define-public python-cdflib
   (package
     (name "python-cdflib")
-    (version "1.2.4")
+    (version "1.2.6")
     (source
      (origin
-       (method git-fetch)   ; no tests in pypi archive
+       (method git-fetch)               ; no tests in PyPI release
        (uri (git-reference
              (url "https://github.com/MAVENSDC/cdflib")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0pjd4dwwlza2592zgdccw1s341s3ikg44pwsr1gk8vjix40m46fr"))))
+        (base32 "1wxr35sqsdqzf85xyjh1v8hmwwiyv4cn0lr7q8l1kkngfywq5l2r"))))
     (build-system pyproject-build-system)
     (arguments
-     ;; Disable shaky test.
-     ;; See https://github.com/MAVENSDC/cdflib/issues/234
-     (list #:test-flags #~(list "-k" "not test_compute_cdfepoch16")
-           #:phases
+     (list #:phases
            #~(modify-phases %standard-phases
                (add-before 'build 'set-env-version
                  (lambda _
@@ -1976,16 +2054,41 @@ attempting to maintain ISTP compliance
 @end itemize")
     (license license:expat)))
 
+(define-public python-cmyt
+  (package
+    (name "python-cmyt")
+    (version "2.0.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "cmyt" version))
+       (sha256
+        (base32 "1zabmckr1z637pfqqvlkj0asfqqvx2x92163dby8x0c8yiqgdvjb"))))
+    (build-system pyproject-build-system)
+    (native-inputs
+     (list python-colorspacious python-pytest python-pytest-mpl))
+    (propagated-inputs
+     (list python-matplotlib python-numpy))
+    (home-page "https://yt-project.org/")
+    (synopsis "Matplotlib colormaps from the yt project")
+    (description
+     "This package provides a range of colormaps designed for scientific
+use with Matplotlib.  It includes perceptually uniform sequential colormaps such
+as @code{abre}, @code{dusk}, @code{kepl}, and @code{octarine}, as well as
+monochromatic sequential colormaps like @code{blue}, @code{green}, and
+@code{red}, and others (@code{algae}, @code{pastel}, and @code{xray}).")
+    (license license:bsd-3)))
+
 (define-public python-crds
   (package
     (name "python-crds")
-    (version "11.17.16")
+    (version "11.17.19")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "crds" version))
               (sha256
                (base32
-                "0j84l7132mvwww2y83h2dgz5qw792ilp3hml4h12n7ydks0w0534"))))
+                "1x48yw6jnz7dw0myc86ds0qaki6v1anqaihd5qzrxwrrl61kyp6x"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -2087,7 +2190,7 @@ used with local NetDRMS sites.")
 (define-public python-drizzle
   (package
     (name "python-drizzle")
-    (version "1.15.0")
+    (version "1.15.1")
     (source
      (origin
        (method git-fetch) ;PyPi doesn't have the test data sets
@@ -2096,7 +2199,7 @@ used with local NetDRMS sites.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "06qh3b60xvm5f2p09l2njwwsh0n95s54r730fyfn66w8mvr1jk82"))))
+        (base32 "14l3d3bx73r7cxhcl1cfh1q088qh5wq5pz5fs9dx7w79kp8mp6pg"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -2200,18 +2303,20 @@ exitinction laws found in the literature.")
 (define-public python-hvpy
   (package
     (name "python-hvpy")
-    (version "1.0.1")
+    (version "1.1.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "hvpy" version))
        (sha256
-        (base32 "0r0asyflz2sw9zn5vgs138nh81m0rbwbakmrncbc1ghdr3g6jahv"))))
+        (base32 "0bly1bgp0axxhzzf5imqsgmms41z8cxbjahxsibvb55dk94gwig6"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:tests? #f)) ; Requires HTTP(S) access to api.beta.helioviewer.org
-    (propagated-inputs (list python-pydantic python-requests))
-    (native-inputs (list python-pytest python-pytest-astropy))
+    (propagated-inputs
+     (list python-pydantic-2 python-pydantic-settings python-requests))
+    (native-inputs
+     (list python-pytest python-pytest-astropy))
     (home-page "https://helioviewer.org/")
     (synopsis "Helioviewer Python API Wrapper")
     (description "@code{hvpy} is a Python API wrapper around the formal
@@ -2515,13 +2620,13 @@ interest, and which require portability between platforms or ease of scripting."
 (define-public python-pyvo
   (package
     (name "python-pyvo")
-    (version "1.5")
+    (version "1.5.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "pyvo" version))
        (sha256
-        (base32 "1kyd4jbspldfpwwvwxfmhq2cxqp4kfbcsiyk4gjs0ib65idxdr45"))))
+        (base32 "0cm6agaf1gvc5bi95wx6a70ngj9vn95rx78fs59vlrmpww7q2807"))))
     (build-system pyproject-build-system)
     (native-inputs
      (list python-pytest-astropy python-requests-mock python-setuptools-scm))
@@ -2933,13 +3038,13 @@ of axis order, spatial projections, and spectral units that exist in the wild.
 (define-public python-specutils
   (package
     (name "python-specutils")
-    (version "1.12.0")
+    (version "1.13.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "specutils" version))
        (sha256
-        (base32 "10nq00q71cyj0p74g3kyzb4hrwkbvhsd6m5zvxifc035rfnvc2qv"))))
+        (base32 "0cfsigvsa0i7z2nq9ci9gxccp074kqsgr01xi2npk8xf7cjisrfq"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -3128,21 +3233,24 @@ image processing functions: @code{xyxymatch}, @code{geomap}.")
 (define-public python-stcal
   (package
     (name "python-stcal")
-    (version "1.6.0")
+    (version "1.6.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "stcal" version))
        (sha256
-        (base32 "12skkbc59alw3asvw36x7nvibx68ccfiqdlgs8b5cvdns5j47f9n"))))
+        (base32 "1rwvzjpidz0sfp52mqgs25599hbvxyc4gdc1yk0kdm8aynhdwi82"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:phases
       #~(modify-phases %standard-phases
-          ;; XXX: Can't detect opencv-python version. The input opencv might
-          ;; not set the version correctly.
-          (delete 'sanity-check)
+          (add-before 'build 'silent-check-for-opencv
+            (lambda _
+              ;; XXX: Can't detect opencv-python version. The input opencv
+              ;; might not set the version correctly.
+              (substitute* "pyproject.toml"
+                ((".*opencv-python-headless.*") ""))))
           (add-before 'check 'build-extensions
             (lambda _
               ;; Cython extensions have to be built before running the tests.
@@ -3171,19 +3279,21 @@ image processing functions: @code{xyxymatch}, @code{geomap}.")
 (define-public python-stdatamodels
   (package
     (name "python-stdatamodels")
-    (version "1.9.1")
+    (version "1.10.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "stdatamodels" version))
        (sha256
-        (base32 "0h1v5c96c4q44b2npq9953x44dr6pwmkr1s05wfixdv95arqd8v0"))))
+        (base32 "00zc7z3f2fjvmms2h7176wnzjb025v0aasc6fiib9055sk34bc94"))))
     (build-system pyproject-build-system)
     (arguments
      (list
-      ;; Disable tests requiring access to CRDS servers to download ~500MiB of
-      ;; data.
-      #:test-flags #~(list "-k" "not test_crds_selectors_vs_datamodel")
+      #:test-flags
+      #~(list "-n" "auto"
+              ;; Disable tests requiring access to CRDS servers to download
+              ;; ~500MiB of data.
+              "-k" "not test_crds_selectors_vs_datamodel")
       #:phases
       #~(modify-phases %standard-phases
           (add-before 'check 'set-home
@@ -3199,6 +3309,7 @@ image processing functions: @code{xyxymatch}, @code{geomap}.")
      (list python-crds
            python-pytest
            python-pytest-doctestplus
+           python-pytest-xdist
            python-scipy
            python-semantic-version
            python-setuptools-scm))
@@ -3975,7 +4086,7 @@ functions, so that they can be called with scalar or array inputs.")
 (define-public python-pynbody
   (package
     (name "python-pynbody")
-    (version "1.5.2")
+    (version "1.6.0")
     (source
      (origin
        (method git-fetch) ;PyPi doesn't have not prebuit version.
@@ -3984,7 +4095,7 @@ functions, so that they can be called with scalar or array inputs.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "175i99zwnnwglndr71paiadrx3xq3icxjgdqfv3xxpyn7fx4dzab"))
+        (base32 "00isg6nsqzgjqpkczwvrcmj3ndzav3bfzla0a72b44cgdj20wyv8"))
        (modules '((guix build utils)))
        (snippet
         ;; Symlink goes to not existing directory.
@@ -3999,6 +4110,7 @@ functions, so that they can be called with scalar or array inputs.")
                            ;;    https://github.com/pynbody/pynbody/blob/ \
                            ;;    f4bd482dc47532831b3ec115c7cb07149d61bfc5/ \
                            ;;    .github/workflows/build-test.yaml#L41
+                           ;; See <https://github.com/pynbody/pynbody/issues/778>
                            "--ignore=tests/copy_on_access_test.py"
                            "--ignore=tests/gravity_test.py"
                            "--ignore=tests/adaptahop_test.py"
@@ -4021,7 +4133,20 @@ functions, so that they can be called with scalar or array inputs.")
                            "--ignore=tests/sph_smooth_test.py"
                            "--ignore=tests/subfind_test.py"
                            "--ignore=tests/subfindhdf_gadget4_test.py"
-                           "--ignore=tests/tipsy_test.py")
+                           "--ignore=tests/tipsy_test.py"
+                           "-k"
+                           (string-append
+                            "not test_div_curl_smoothing"
+                            " and not test_float_kd"
+                            " and not test_kd_delete"
+                            " and not test_kd_issue_88"
+                            " and not test_kdtree_from_existing_kdtree"
+                            " and not test_kdtree_shared_mem"
+                            " and not test_neighbour_list"
+                            " and not test_particles_in_sphere"
+                            " and not test_periodic_smoothing"
+                            " and not test_smooth"
+                            " and not test_smooth_WendlandC2"))
            #:phases
            #~(modify-phases %standard-phases
                (add-before 'build 'set-compiler
@@ -4152,22 +4277,22 @@ spectra, and data.")
 (define-public python-suntime
   (package
     (name "python-suntime")
-    (version "1.2.5")
-    (source (origin
-              (method url-fetch)
-              (uri (pypi-uri "suntime" version))
-              (sha256
-               (base32
-                "0ja64w293wjx76q3z18ikx4rdihwkbj6pnjpbs82ycyyzhfnbpz4"))))
-    (build-system python-build-system)
-    (propagated-inputs (list python-dateutil))
+    (version "1.3.2")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "suntime" version))
+       (sha256
+        (base32 "1kyd1r6zcs0jmh5gq74adrnb1h7dfr1mzjq4k4vbngfiga8gfd28"))))
+    (build-system pyproject-build-system)
+    (propagated-inputs
+     (list python-dateutil))
     (home-page "https://github.com/SatAgro/suntime")
     (synopsis "Sunset and sunrise time calculation python library")
     (description
-     "Python library doing sunrise and sunset time calculation.
-
-Takes a WGS84 (GPS) latitude/longitude as input as well as an UTC or local
-datetime object.")
+     "Python library doing sunrise and sunset time calculation.  Takes a
+WGS84 (GPS) latitude/longitude as input as well as an UTC or local datetime
+object.")
     (license license:lgpl3+)))
 
 (define-public python-synphot
@@ -4254,18 +4379,26 @@ between image and reference catalogs. Currently only aligning images with
 (define-public python-asdf
   (package
     (name "python-asdf")
-    (version "3.0.1")
+    (version "3.1.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf" version))
        (sha256
-        (base32 "1jsk7b4mx04l0a08j832vnl309dba3gjnha9mbd61dzs9ridrfna"))))
+        (base32 "0fa6y3gmqc0y3nz0h68vq3a84pvx6gc5zp33wg8a4n9b4kipm464"))))
     (build-system pyproject-build-system)
     (arguments
      (list
       #:test-flags
-      #~(list "-n" "auto")))
+      #~(list "-n" "auto" "-p" "no:legacypath")
+      #:phases
+      #~(modify-phases %standard-phases
+          ;; ImportError: Error importing plugin " no:legacypath": No module
+          ;; named ' no:legacypath'
+          (add-before 'check 'fix-tests-setup
+            (lambda _
+              (substitute* "pyproject.toml"
+                ((".*:legacypath.*") "")))))))
     (native-inputs
      (list python-fsspec
            python-packaging
@@ -4294,28 +4427,71 @@ interchange format for scientific data.  This package contains the Python
 implementation of the ASDF Standard.")
     (license license:bsd-3)))
 
+(define-public python-asdf-compression
+  ;; TODO: No release, change to tag when it's ready.
+  (let ((commit "57cc7e76fb4163be3e99fb740b36b5ec5ae96e49")
+        (revision "0"))
+    (package
+      (name "python-asdf-compression")
+      (version (git-version "0.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/asdf-format/asdf-compression")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1g6iiyls950k66dmd0pbqqdvz74kksc4j191n0ik6fhjnkiwifgs"))))
+      (build-system pyproject-build-system)
+      (arguments
+       (list
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-before 'build 'set-version
+              (lambda _
+                (setenv "SETUPTOOLS_SCM_PRETEND_VERSION" "0.0.1"))))))
+      (native-inputs
+       (list python-numpy
+             python-pytest
+             python-semantic-version
+             python-setuptools-scm))
+      (propagated-inputs
+       (list python-asdf
+             python-blosc
+             python-lz4
+             python-zstandard))
+      (home-page "https://github.com/asdf-format/asdf-fits-schemas")
+      (synopsis "ASDF extension to support various compression algorithms")
+      (description
+       "This package includes a plugin for the Python library ASDF to add
+support for reading and writing various compression algorithms including:
+@url{https://www.blosc.org/python-blosc/reference.html,Blosc},
+@url{https://python-lz4.readthedocs.io/en/stable/lz4.frame.html,LZ4 Frame},
+@url{http://facebook.github.io/zstd/,Zstandard}.")
+      (license license:bsd-3))))
+
 (define-public python-asdf-standard
   (package
     (name "python-asdf-standard")
-    (version "1.0.3")
+    (version "1.1.1")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf_standard" version))
        (sha256
         (base32
-         "0i7xdjwn5prg2hcnf1zhw57mszc68jjr5sv4rimpzcg7f2dgzn5g"))))
+         "00k1fzc8y8j0ar1chq0nqyfw8bgkkjgrkm32ibn0kz2vn715nlq1"))))
     (build-system pyproject-build-system)
     (arguments
-     (list #:phases #~(modify-phases %standard-phases
-                        (add-before 'check 'remove-blocking-tests
-                          (lambda _
-                            ;; Remove tests require python-asdf where
-                            ;; python-asdf require python-asdf-standard,
-                            ;; break circular dependencies.
-                            (for-each delete-file
-                                      (list "tests/test_manifests.py"
-                                            "tests/test_integration.py")))))))
+     (list
+      #:test-flags
+      ;; Remove tests requiring python-asdf where python-asdf requires
+      ;; python-asdf-standard, break circular dependencies.
+      #~(list "--ignore=tests/test_asdf_schema.py"
+              "--ignore=tests/test_integration.py"
+              "--ignore=tests/test_manifests.py"
+              "--ignore=tests/test_yaml_schema.py")))
     (native-inputs (list python-astropy
                          python-jsonschema
                          python-pypa-build
@@ -4338,13 +4514,13 @@ up-front for extensibility.")
 (define python-asdf-transform-schemas
   (package
     (name "python-asdf-transform-schemas")
-    (version "0.4.0")
+    (version "0.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf_transform_schemas" version))
        (sha256
-        (base32 "1jlls8mirwarf8d67gaix39d8zcx1rx8fmr9qdzrbyrmxqzxqzyy"))))
+        (base32 "0as6dcf9dmxjh24gwdmqwbbrk56fhgsmzwi7af4llwvm4mw4rkw2"))))
     (build-system pyproject-build-system)
     (arguments
      ;; Dependency cycle with python-asdf
@@ -4362,13 +4538,13 @@ package such as asdf-astropy.")
 (define python-asdf-coordinates-schemas
   (package
     (name "python-asdf-coordinates-schemas")
-    (version "0.2.0")
+    (version "0.3.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf_coordinates_schemas" version))
        (sha256
-        (base32 "1x6mipg76c6qldq8s2p2wpsq0cpr9b5krp62xskljdz1f84abyg3"))))
+        (base32 "0kk0rlzv0kkcw6fiwvps4n0x05867xc9hxyyzica31zcvhan12y9"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -4463,14 +4639,14 @@ install an implementation package such as asdf-astropy.")
 (define python-asdf-unit-schemas
   (package
     (name "python-asdf-unit-schemas")
-    (version "0.1.0")
+    (version "0.2.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf_unit_schemas" version))
        (sha256
         (base32
-         "16grpx3a9h0v1wirp0zqrfsxm867v5c0xyr98pylzziy45kqvds2"))))
+         "0h24gvm1wip4gh3fw5ki8kwnvcy8gw6b6pajw3i1zvriamdw95fr"))))
     (build-system pyproject-build-system)
     (arguments
      ;; Dependency cycle with python-asdf
@@ -4482,16 +4658,41 @@ install an implementation package such as asdf-astropy.")
     (description "This package provides ASDF schemas for validating unit tags.")
     (license license:bsd-3)))
 
+(define-public python-asdf-zarr
+  (package
+    (name "python-asdf-zarr")
+    (version "0.0.3")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "asdf_zarr" version))
+       (sha256
+        (base32 "0ax7c9xarh6fi2yxm1z2p90mc3d57q23a7wc8av30xg8ririrl4s"))))
+    (build-system pyproject-build-system)
+    (propagated-inputs
+     (list python-asdf python-fsspec python-zarr))
+    (native-inputs
+     (list python-pytest python-semantic-version python-setuptools-scm))
+    (home-page "https://github.com/asdf-format/asdf-zarr")
+    (synopsis "Asdf extension to support Zarr arrays")
+    (description
+     "This package includes an extension for the Python library asdf to add
+support for reading and writing chunked
+@url{https://zarr.readthedocs.io/en/stable/,Zarr} arrays, a file storage
+format for chunked, compressed, N-dimensional arrays based on an open-source
+specification.")
+    (license license:bsd-3)))
+
 (define-public python-asdf-astropy
   (package
     (name "python-asdf-astropy")
-    (version "0.5.0")
+    (version "0.6.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf-astropy" version))
        (sha256
-        (base32 "061y7r1d2fqlr8a6gyaffqa3z5m0ymljahhvxzcb71355xkqig7v"))))
+        (base32 "0cxwknkjkgiavwmsz3vzk88c3spdi1cj4kwp62hgj92g2mh5k0zh"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -4525,13 +4726,13 @@ Astropy objects.")
 (define python-asdf-wcs-schemas
   (package
     (name "python-asdf-wcs-schemas")
-    (version "0.3.0")
+    (version "0.4.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "asdf_wcs_schemas" version))
        (sha256
-        (base32 "1r9ls2skgwq6my68nfwfah1s0q6bm2qq97s0h79vwh997jy97rai"))))
+        (base32 "1d08ng890xc1ilf3y1hrimx09x990wvg9g18n0ijwvpilnw49fy0"))))
     (build-system pyproject-build-system)
     (arguments
      (list
@@ -4543,9 +4744,9 @@ Astropy objects.")
            python-semantic-version
            python-setuptools-scm))
     (propagated-inputs
-     (list python-asdf-standard
-           python-asdf-transform-schemas
-           python-asdf-unit-schemas))
+     (list python-asdf-coordinates-schemas
+           python-asdf-standard
+           python-asdf-transform-schemas))
     (home-page "https://github.com/asdf-format/asdf-wcs-schemas")
     (synopsis "ASDF WCS Schemas")
     (description
@@ -4557,13 +4758,13 @@ install an implementation package such as gwcs.")
 (define-public python-gwcs
   (package
     (name "python-gwcs")
-    (version "0.20.0")
+    (version "0.21.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "gwcs" version))
        (sha256
-        (base32 "1vhvs0mcwrw0128q9pd9v21wl173lspj5rvygqr19ljncralbx73"))))
+        (base32 "1fn5l4v236bl7xqi1is40c2q57dji8by98iwqcndfnmjwqf7zllc"))))
     (build-system pyproject-build-system)
     (native-inputs
      (list python-jsonschema
@@ -4660,13 +4861,13 @@ channels
 (define-public python-radiospectra
   (package
     (name "python-radiospectra")
-    (version "0.4.0")
+    (version "0.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "radiospectra" version))
        (sha256
-        (base32 "0gq61ywk7li0gxwmp4hp2hc4zbrlqgn8zy0sz24qh55kn5l5gxjr"))))
+        (base32 "0nw71a7i875lfwbwhpc80nvwalb7iq3fynfkbngx6f6jb3v10dgs"))))
     (build-system pyproject-build-system)
     (arguments
      (list

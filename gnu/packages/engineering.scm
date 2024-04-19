@@ -173,7 +173,7 @@
 (define-public librecad
   (package
     (name "librecad")
-    (version "2.2.0-rc2")
+    (version "2.2.0.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -182,37 +182,12 @@
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "08cl4935c9vznz9qdw1zgd86rn7hl64zpfayxl07x21bhf53pn24"))
-              (patches
-               (search-patches "librecad-support-for-boost-1.76.patch"))))
+                "04pyywkc0nzhdx1wi0g63hldmbpdp0wvlrhqv8p3m1z6wyyafgjn"))))
     (build-system qt-build-system)
     (arguments
      '(#:test-target "check"
        #:phases
        (modify-phases %standard-phases
-         ;; Without this patch boost complains that "make_array" is not a
-         ;; member of "boost::serialization".
-         (add-after 'unpack 'patch-boost-error
-           (lambda _
-             (substitute* "librecad/src/lib/math/lc_quadratic.h"
-               (("#include \"rs_vector.h\"" line)
-                (string-append line
-                               "\n#include <boost/serialization/array_wrapper.hpp>")))
-             (substitute* "librecad/src/lib/math/rs_math.cpp"
-               (("#include <boost/numeric/ublas/matrix.hpp>" line)
-                (string-append "#include <boost/serialization/array_wrapper.hpp>\n"
-                               line)))))
-         ;; Fix build against Qt 5.11.
-         (add-after 'unpack 'add-missing-headers
-           (lambda _
-             (substitute* "librecad/src/ui/generic/widgetcreator.cpp"
-               (("#include <QPushButton>") "#include <QPushButton>
-#include <QActionGroup>"))))
-         (add-after 'unpack 'patch-paths
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out")))
-               (substitute* "librecad/src/lib/engine/rs_system.cpp"
-                 (("/usr/share") (string-append out "/share"))))))
          (replace 'configure
            (lambda* (#:key inputs #:allow-other-keys)
              (system* "qmake" (string-append "BOOST_DIR="
@@ -762,9 +737,7 @@ multipole-accelerated algorithm.")
      (list boost
            libgit2
            qtbase-5
-           ;; TODO: Needs to be renamed to qtserialport-5. when version 6 is
-           ;; packed.
-           qtserialport
+           qtserialport-5
            qtsvg-5
            zlib))
     (home-page "https://fritzing.org")
@@ -1614,7 +1587,7 @@ or an Ethernet connection.")
     (native-inputs
      `(("fortran" ,gfortran)))
     (inputs
-     (list lapack))
+     (list openblas))
     (home-page "https://github.com/stevengj/harminv")
     (synopsis "Harmonic inversion solver")
     (description
@@ -1680,7 +1653,7 @@ for scientific simulations.")
        ("gsl" ,gsl)
        ("guile" ,guile-2.2)
        ("hdf5" ,hdf5)
-       ("lapack" ,lapack)
+       ("openblas" ,openblas)
        ("libctl" ,guile-libctl)
        ("readline" ,readline)
        ("zlib" ,zlib)))
@@ -1722,7 +1695,7 @@ fully-vectorial and three-dimensional methods.")
        ("guile" ,guile-2.2)
        ("harminv" ,harminv)
        ("hdf5" ,hdf5)
-       ("lapack" ,lapack)
+       ("openblas" ,openblas)
        ("libctl" ,guile-libctl)
        ("mpb" ,mpb)
        ("zlib" ,zlib)))
@@ -4257,7 +4230,7 @@ netlists from the drawn schematic, allowing the simulation of the circuit.")
                   "08rqhl6a5a8s67a8yl16944zgcsnnb08xfv4klzyqwlvaqgfp783"))))
       (build-system gnu-build-system)
       (native-inputs (list qttools-5))
-      (inputs (list qtbase-5 qtserialport))
+      (inputs (list qtbase-5 qtserialport-5))
       (arguments
        (list #:tests? #f                      ; no tests.
              #:phases #~(modify-phases %standard-phases
@@ -4302,7 +4275,7 @@ form, numpad.
 (define-public rizin
   (package
     (name "rizin")
-    (version "0.6.2")
+    (version "0.7.2")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -4310,7 +4283,7 @@ form, numpad.
                     version "/rizin-src-v" version ".tar.xz"))
               (sha256
                (base32
-                "0szq3wr7i7gwm8llgbhssjb63q70rjqqdlj6078vs110waih16p2"))))
+                "0ajqng66b01phs0hjygg9phyc8p3fs0a1isbc0zmxdz2bas3zzzw"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -4322,11 +4295,13 @@ form, numpad.
               "-Duse_sys_libzip=enabled"
               "-Duse_sys_zlib=enabled"
               "-Duse_sys_lz4=enabled"
+              "-Duse_sys_libzstd=enabled"
               "-Duse_sys_xxhash=enabled"
               "-Duse_sys_openssl=enabled"
               "-Duse_sys_tree_sitter=enabled"
               "-Duse_sys_lzma=enabled"
               "-Duse_sys_libmspack=enabled"
+              "-Duse_sys_pcre2=enabled"
               "-Duse_zlib=true"
               "-Duse_lzma=true"
               "-Dinstall_sigdb=false"
@@ -4342,8 +4317,7 @@ form, numpad.
                 (("subdir\\('integration'\\)") ""))
               ;;; Skip failing tests.
               (substitute* "test/unit/meson.build"
-                (("'bin_mach0',\n") "")
-                (("'hash',\n") "")))))))
+                (("'bin_mach0',\n") "")))))))
     (native-inputs (list pkg-config))
     (inputs
      (list capstone
@@ -4352,9 +4326,11 @@ form, numpad.
            libzip
            lz4
            openssl
+           pcre2
            tree-sitter
            xxhash
            zlib
+           (list zstd "lib")
            libmspack))
     (home-page "https://rizin.re")
     (synopsis "Disassemble, debug, analyze, and manipulate binary files")

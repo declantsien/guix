@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2020, 2024 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2016 Ben Woodcroft <donttrustben@gmail.com>
 ;;; Copyright © 2015 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016 Jelle Licht <jlicht@fsfe.org>
@@ -69,7 +69,9 @@
   #:use-module (gnu packages golang)
   #:use-module (gnu packages golang-build)
   #:use-module (gnu packages golang-check)
+  #:use-module (gnu packages golang-compression)
   #:use-module (gnu packages golang-crypto)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages java)
   #:use-module (gnu packages ncurses)
   #:use-module (gnu packages pcre)
@@ -83,8 +85,8 @@
   #:use-module (gnu packages readline)
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages slang)
-  #:use-module (gnu packages syncthing)
-  #:use-module (gnu packages web))
+  #:use-module (gnu packages web)
+  #:use-module (gnu packages xorg))
 
 (define-public dos2unix
   (package
@@ -932,7 +934,7 @@ Filter, list, or split a tar file.
 (define-public java-rsyntaxtextarea
   (package
     (name "java-rsyntaxtextarea")
-    (version "2.6.1")
+    (version "3.4.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -941,16 +943,31 @@ Filter, list, or split a tar file.
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0dyflzvxq2wvs0rgqfyi5yzzrb6r4bzw2dm8cl304dakxk38ddys"))))
+                "0ad3cmfxwz9963kbh5ryba9jp88hsx03jsl8r4qinwhy6aahx6f3"))))
     (build-system ant-build-system)
     (arguments
-     `(;; FIXME: some tests fail because locale resources cannot be found.
-       ;; Even when I add them to the class path,
-       ;; RSyntaxTextAreaEditorKitDumbCompleteWordActionTest fails.
-       #:tests? #f
-       #:jar-name "rsyntaxtextarea.jar"))
+     (list
+      #:jar-name "rsyntaxtextarea.jar"
+      #:source-dir "RSyntaxTextArea/src/main/java"
+      #:test-dir "RSyntaxTextArea/src/test"
+      #:tests? #false ;requires junit5
+      #:phases
+      '(modify-phases %standard-phases
+         (add-before 'build 'copy-resources
+           (lambda _
+             (copy-recursively "RSyntaxTextArea/src/main/resources" "build/classes")))
+         #;
+         (add-before 'check 'start-xorg-server
+           (lambda _
+             ;; The test suite requires a running X server.
+             (system "Xvfb :1 &")
+             (setenv "DISPLAY" ":1")
+             ;; Prevent irrelevant errors that cause test output mismatches:
+             ;; ‘Fontconfig error: No writable cache directories’
+             (setenv "XDG_CACHE_HOME" (getcwd)))))))
     (native-inputs
-     (list java-junit java-hamcrest-core))
+     (list java-hamcrest-core
+           xorg-server-for-tests))
     (home-page "https://bobbylight.github.io/RSyntaxTextArea/")
     (synopsis "Syntax highlighting text component for Java Swing")
     (description "RSyntaxTextArea is a syntax highlighting, code folding text
@@ -958,6 +975,48 @@ component for Java Swing.  It extends @code{JTextComponent} so it integrates
 completely with the standard @code{javax.swing.text} package.  It is fast and
 efficient, and can be used in any application that needs to edit or view
 source code.")
+    (license license:bsd-3)))
+
+(define-public java-autocomplete
+  (package
+    (name "java-autocomplete")
+    (version "3.3.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                     (url "https://github.com/bobbylight/AutoComplete")
+                     (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "0ksa3k3xkdjpyq9sbsvchyhfzzpb67pv8xzbpljj8rqilgk8ysy0"))))
+    (build-system ant-build-system)
+    (arguments
+     (list
+      #:tests? #false ;needs junit5
+      #:jar-name "autocomplete.jar"
+      #:source-dir "AutoComplete/src/main/java"
+      #:test-dir "AutoComplete/src/test"
+      #:phases
+      '(modify-phases %standard-phases
+         (add-before 'build 'copy-resources
+           (lambda _
+             (copy-recursively "AutoComplete/src/main/resources" "build/classes"))))))
+    (propagated-inputs
+     (list java-rsyntaxtextarea))
+    (native-inputs
+     (list java-hamcrest-core))
+    (home-page "https://github.com/bobbylight/AutoComplete")
+    (synopsis "Text completion library")
+    (description "AutoComplete is a library allowing you to add IDE-like
+auto-completion (aka \"code completion\" or \"Intellisense\") to any Swing
+JTextComponent.  Special integration is added for @code{RSyntaxTextArea},
+since this feature is commonly needed when editing source code.  Features
+include: Drop-down completion choice list. Optional companion \"description\"
+window, complete with full HTML support and navigable with hyperlinks.
+Optional parameter completion assistance for functions and methods, ala
+Eclipse and NetBeans.  Completion information is typically specified in an XML
+file, but can even be dynamic.")
     (license license:bsd-3)))
 
 ;; We use the sources from git instead of the tarball from pypi, because the
@@ -1373,23 +1432,50 @@ of a Unix terminal to HTML code.")
              (commit (string-append "v" version))))
        (sha256
         (base32 "0d07fwha2220m8j24h527xl0gnl3svvyaywflgk5292d6g49ach2"))
-       (file-name (git-file-name name version))))
+       (file-name (git-file-name name version))
+       (modules '((guix build utils)))
+       ;; Remove some available vendor modules.
+       ;; TODO: Pack all of them and remove vendor directory completely.
+       (snippet
+        '(for-each
+          delete-file-recursively
+          (list "vendor/github.com/fatih/color"
+                "vendor/github.com/mitchellh/mapstructure"
+                "vendor/github.com/gobwas/glob"
+                "vendor/github.com/mitchellh/go-homedir"
+                "vendor/github.com/olekukonko/tablewriter"
+                "vendor/github.com/spf13/afero"
+                "vendor/github.com/urfave/cli"
+                "vendor/github.com/yuin/goldmark"
+                "vendor/golang.org/x/net/html"
+                "vendor/gopkg.in/ini.v1"
+                "vendor/gopkg.in/yaml.v2")))))
     (build-system go-build-system)
-    (native-inputs
-     (list go-github-com-mitchellh-mapstructure
-           go-github-com-olekukonko-tablewriter
-           go-github-com-spf13-afero
-           go-github-com-urfave-cli))
     (arguments
-     `(#:import-path "github.com/errata-ai/vale"
-       #:install-source? #f))
+     (list #:install-source? #f
+           #:import-path "github.com/errata-ai/vale"))
+    (native-inputs
+     (list go-github-com-fatih-color
+           go-github-com-mitchellh-mapstructure
+           go-github-com-gobwas-glob
+           ;; go-github-com-jdkato-prose
+           ;; go-github-com-jdkato-regexp
+           go-github-com-mitchellh-go-homedir
+           go-github-com-olekukonko-tablewriter
+           ;; go-github-com-remeh-sizedwaitgroup
+           go-github-com-spf13-afero
+           go-github-com-urfave-cli
+           go-github-com-yuin-goldmark
+           go-golang-org-x-net-html
+           go-gopkg-in-ini-v1
+           go-gopkg-in-yaml-v2))
     (home-page "https://github.com/errata-ai/vale")
     (synopsis "Fully customizable syntax-aware linter that focuses on your style")
     (description
      "Vale is a fully extensible linter that focuses on your own writing style
 by making use of rules in individual YAML files.  It is syntax-aware on markup
-languages such as HTML, Markdown, Asciidoc, and reStructuredText.  The community
-around it also has a list of style guides implemented with Vale in
+languages such as HTML, Markdown, Asciidoc, and reStructuredText.  The
+community around it also has a list of style guides implemented with Vale in
 @url{https://github.com/errata-ai/styles, their styles repo}.")
     (license license:expat)))
 
@@ -1445,17 +1531,15 @@ files for valid UTF-8 use and to report which line endings they use.")
          "0cd1ikxsypjqisfnmr7zix3g7x8p892w77086465chyd39gpk97b"))))
     (build-system go-build-system)
     (arguments
-     '(#:import-path "github.com/aswinkarthik/csvdiff"))
-    (propagated-inputs
-     (list go-golang-org-x-sys
-           go-github-com-stretchr-testify
-           go-github-com-spf13-cobra
-           go-github-com-spf13-afero
-           go-github-com-spaolacci-murmur3
-           go-github-com-mattn-go-colorable
+     (list
+      #:install-source? #f
+      #:import-path "github.com/aswinkarthik/csvdiff"))
+    (native-inputs
+     (list go-github-com-cespare-xxhash
            go-github-com-fatih-color
-           go-github-com-cespare-xxhash
-           go-github-com-oneofone-xxhash))
+           go-github-com-spf13-afero
+           go-github-com-spf13-cobra
+           go-github-com-stretchr-testify))
     (home-page "https://github.com/aswinkarthik/csvdiff")
     (synopsis "Fast diff tool for comparing CSV files")
     (description "@code{csvdiff} is a diff tool to compute changes between two
@@ -1475,6 +1559,60 @@ JSON for post-processing
 
 (define-public go-github-com-aswinkarthik-csvdiff
   (deprecated-package "go-github-com-aswinkarthik-csvdiff" csvdiff))
+
+(define-public miller
+  (package
+    (name "miller")
+    (version "6.12.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/johnkerl/miller")
+             (commit (go-version->git-ref version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "195lgayq5z7ndag3w495fs618pkrhz426kg0kp3s5sa68vr1madp"))))
+    (build-system go-build-system)
+    (arguments
+     (list
+      #:go go-1.19
+      #:install-source? #f
+      #:import-path "github.com/johnkerl/miller/cmd/mlr"
+      #:unpack-path "github.com/johnkerl/miller"
+      #:phases
+      #~(modify-phases %standard-phases
+          ;; TODO: Build all provided documentation.
+          (add-after 'install 'install-man-pages
+            (lambda* (#:key unpack-path #:allow-other-keys)
+              (with-directory-excursion (string-append "src/" unpack-path)
+                (invoke "make" (string-append "PREFIX=" #$output)
+                        "-C" "man" "install")))))))
+    (native-inputs
+     (list go-github-com-facette-natsort
+           go-github-com-johnkerl-lumin
+           go-github-com-kballard-go-shellquote
+           go-github-com-klauspost-compress
+           go-github-com-lestrrat-go-strftime
+           go-github-com-mattn-go-isatty
+           ;; Optional, not packed in Guix
+           ;; go-github-com-nine-lives-later-go-windows-terminal-sequences
+           go-github-com-pkg-profile
+           go-github-com-stretchr-testify
+           go-golang-org-x-sys
+           go-golang-org-x-term
+           go-golang-org-x-text
+           python-wrapper
+           python-mkdocs-material
+           ruby))
+    (home-page "https://miller.readthedocs.io/")
+    (synopsis "Text-formatted data processing tool")
+    (description
+     "Miller (@command{mlr}) is like @command{awk}, @command{sed},
+@command{cut}, @command{join}, and @command{sort} for data formats such as
+CSV, TSV, JSON, JSON Lines, and positionally-indexed.  It supports format
+conversion and pretty-printing.")
+    (license license:bsd-2)))
 
 (define-public ack
   (package

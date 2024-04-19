@@ -160,7 +160,6 @@
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages ssh)
   #:use-module (gnu packages sqlite)
-  #:use-module (gnu packages syncthing)           ;for go-github-com-lib-pq
   #:use-module (gnu packages tcl)
   #:use-module (gnu packages terminals)
   #:use-module (gnu packages texinfo)
@@ -4199,19 +4198,21 @@ files or Python scripts that define a list of migration steps.")
 (define-public python-mysqlclient
   (package
     (name "python-mysqlclient")
-    (version "2.0.1")
+    (version "2.2.4")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "mysqlclient" version))
        (sha256
-        (base32
-         "1rf5l8hazs3v18hmcrm90z3hi9wxv553ipwd5l6kj8j7l6p7abzv"))))
-    (build-system python-build-system)
-    (arguments '(#:tests? #f))          ;XXX: requires a live database
-    (inputs
-     `(("mysql-dev" ,mariadb "dev")))
-    (home-page "https://github.com/PyMySQL/mysqlclient-python")
+        (base32 "0hdznfz9095d2qhl7awbp39s7wpqbxn37xzan487qzaf8srrzg1k"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list #:test-flags
+           #~'("tests/test__mysql.py"   ;tests not needing a live db
+               "tests/test_MySQLdb_times.py")))
+    (native-inputs (list pkg-config python-pytest))
+    (inputs (list mariadb-connector-c))
+    (home-page "https://github.com/PyMySQL/mysqlclient")
     (synopsis "MySQLdb is an interface to the popular MySQL database server for Python")
     (description "MySQLdb is an interface to the popular MySQL database server
 for Python.  The design goals are:
@@ -5350,11 +5351,10 @@ compatible with SQLite using a graphical user interface.")
   (package
     (name "sqls")
     (version "0.2.18")
-    (home-page "https://github.com/lighttiger2505/sqls")
     (source (origin
               (method git-fetch)
               (uri (git-reference
-                    (url home-page)
+                    (url "https://github.com/sqls-server/sqls")
                     (commit (string-append "v" version))))
               (file-name (git-file-name name version))
               (sha256
@@ -5362,19 +5362,22 @@ compatible with SQLite using a graphical user interface.")
                 "13837v27avdp2nls3vyy7ml12nj7rxragchwf92adn10ffp4aj6c"))))
     (build-system go-build-system)
     (arguments
-     '(#:import-path "github.com/lighttiger2505/sqls"))
+     (list
+      #:install-source? #f
+      #:import-path "github.com/lighttiger2505/sqls"))
     (inputs (list go-github-com-go-sql-driver-mysql
                   go-github-com-lib-pq
+                  go-github-com-mattn-go-runewidth
                   go-github-com-mattn-go-sqlite3
                   go-github-com-olekukonko-tablewriter
                   go-github-com-pkg-errors
                   go-github-com-sourcegraph-jsonrpc2
                   go-golang-org-x-crypto
-                  go-github-com-mattn-go-runewidth
                   go-golang-org-x-xerrors
                   go-gopkg-in-yaml-v2))
     (native-inputs (list go-github-com-google-go-cmp-cmp
                          go-github-com-k0kubun-pp))
+    (home-page "https://github.com/sqls-server/sqls")
     (synopsis "SQL language server written in Go")
     (description
      "This package implements the @acronym{LSP, Language Server Protocol} for SQL.")

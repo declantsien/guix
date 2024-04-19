@@ -101,9 +101,11 @@
   #:use-module (gnu packages imagemagick)
   #:use-module (gnu packages java)
   #:use-module (gnu packages kde)
+  #:use-module (gnu packages libunwind)
   #:use-module (gnu packages libusb)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages lua)
+  #:use-module (gnu packages machine-learning)
   #:use-module (gnu packages maths)
   #:use-module (gnu packages multiprecision)
   #:use-module (gnu packages pcre)
@@ -141,7 +143,7 @@
 (define-public gmt
   (package
     (name "gmt")
-    (version "6.4.0")
+    (version "6.5.0")
     (source
      (origin
        (method url-fetch)
@@ -149,7 +151,7 @@
                            "releases/download/"
                            version "/gmt-" version "-src.tar.xz"))
        (sha256
-        (base32 "0wh694cwcw2dz5rsh6pdn9irx08d65iih0vbxz350vzrkkjzyvml"))))
+        (base32 "07hlqg3adxrz7wqih8pydr44v7j40savcxfjlkaw3y9k82sas8j0"))))
     (build-system cmake-build-system)
     (arguments (list #:tests? #false)) ;tests need costline data and caches
     (inputs
@@ -225,15 +227,15 @@ BUFR and WMO GTS abbreviated header formats.")
 (define-public cdo
   (package
     (name "cdo")
-    (version "2.1.0")
+    (version "2.4.0")
     (source
      (origin
        (method url-fetch)
        (uri (string-append
-             "https://code.mpimet.mpg.de/attachments/download/27481/cdo-"
+             "https://code.mpimet.mpg.de/attachments/download/29313/cdo-"
              version ".tar.gz"))
        (sha256
-        (base32 "1k18llghpf3jnjn0xcnhmbg7arb1fiy854qqn9m5c1abjin38wdq"))))
+        (base32 "0b2d1d8r1lxs422dxajnmvjyhjwfichlkglv3yqm7wq7rjw0yyd4"))))
     (build-system gnu-build-system)
     (arguments
      (list #:configure-flags
@@ -258,7 +260,7 @@ BUFR and WMO GTS abbreviated header formats.")
     (inputs
      (list curl eccodes fftw hdf5 libxml2 netcdf proj udunits))
     (native-inputs
-     (list pkg-config))
+     (list pkg-config python-wrapper))
     (home-page "https://code.mpimet.mpg.de/projects/cdo")
     (synopsis "Climate data operators")
     (description "@acronym{CDO, Climate Data Operators} is a collection of command-line
@@ -470,7 +472,7 @@ topology functions.")
 (define-public gnome-maps
   (package
     (name "gnome-maps")
-    (version "43.0")                    ;for libsoup 3 support
+    (version "44.5")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnome/sources/" name "/"
@@ -478,7 +480,7 @@ topology functions.")
                                   name "-" version ".tar.xz"))
               (sha256
                (base32
-                "1r1l6ajs6zz316m8zac5r0l3qgdv616xh376bfn2fflcnz7wys08"))))
+                "026488yb6azwb2sm0yy0iaipk914l3agvb7d8azks4kyjqlslyb8"))))
     (build-system meson-build-system)
     (arguments
      (list
@@ -520,11 +522,10 @@ topology functions.")
            glib-networking
            gnome-online-accounts
            gsettings-desktop-schemas
-           gtk+
+           gtk
            libadwaita
            libgee
            libgweather4
-           libhandy
            librsvg
            libsecret
            libshumate
@@ -1230,6 +1231,47 @@ development.")
     (home-page "https://www.gaia-gis.it/fossil/spatialite_gui/index")
     (license license:gpl3+)))
 
+(define-public pdal
+  (package
+    (name "pdal")
+    (version "2.7.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/PDAL/PDAL")
+             (commit version)))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0gg5lcshlmn3wwak42xr0b8a8gdr4572d7hrcvxn2291kp2c3096"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+               (replace 'check
+                 (lambda* (#:key tests? #:allow-other-keys)
+                   (when tests?
+                     (invoke "ctest" "-E" ;; This test hangs.
+                             "pdal_io_stac_reader_test")))))))
+    (native-inputs (list python))
+    (inputs (list gdal
+                  h3
+                  libgeotiff
+                  libunwind
+                  libxml2
+                  nlohmann-json
+                  openssl
+                  proj
+                  utfcpp
+                  xz
+                  `(,zstd "lib")))
+    (home-page "https://pdal.io/")
+    (synopsis "Point Data Abstraction Library")
+    (description "PDAL is a C++ library for translating and manipulating point
+cloud data.  It is very much like the GDAL library which handles raster and
+vector data.")
+    (license license:bsd-3)))
+
 (define-public gdal
   (package
     (name "gdal")
@@ -1346,6 +1388,42 @@ utilities for data translation and processing.")
     (description
       "The Python Shapefile Library (PyShp) reads and writes ESRI Shapefiles.")
     (license license:expat)))
+
+(define-public python-verde
+  (package
+    (name "python-verde")
+    (version "1.8.0")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "verde" version))
+       (sha256
+        (base32 "1hnh91dsk2dxfbk7p2hv3hajaa396139pd6apabgdrp5b7s54k97"))))
+    (build-system pyproject-build-system)
+    (arguments
+     ;; Tests below fetch data remotely.
+     (list #:test-flags #~(list "-k" (string-append
+                                      "not test_minimal_integration_2d_gps"
+                                      " and not test_datasets_locate"
+                                      " and not test_fetch_texas_wind"
+                                      " and not test_fetch_baja_bathymetry"
+                                      " and not test_fetch_rio_magnetic"
+                                      " and not test_fetch_california_gps"))))
+    (native-inputs (list python-cartopy python-distributed))
+    (propagated-inputs (list python-dask
+                             python-numpy
+                             python-pandas
+                             python-pooch
+                             python-scikit-learn
+                             python-scipy
+                             python-xarray))
+    (home-page "https://github.com/fatiando/verde")
+    (synopsis "Processing and gridding spatial data, machine-learning style")
+    (description
+     "Verde is a Python library for processing spatial data (topography, point
+clouds, bathymetry, geophysics surveys, etc) and interpolating them on a 2D
+surface (i.e., gridding) with a hint of machine learning.")
+    (license license:bsd-3)))
 
 (define-public python-cartopy
   (package
@@ -1911,6 +1989,34 @@ persisted.
 @end itemize
 ")
     (license license:expat)))
+
+(define-public libmseed
+  (package
+    (name "libmseed")
+    (version "3.1.1")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/EarthScope/libmseed")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "05sk2h19c7ja98s75b7hbn2cwnjc5l6dr59c23fgnaimmad2rfn7"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list #:make-flags #~(list (string-append "CC=" #$(cc-for-target))
+                                (string-append "PREFIX=" #$output))
+           #:phases #~(modify-phases %standard-phases
+                        (delete 'configure))))
+    (home-page "https://earthscope.github.io/libmseed/")
+    (synopsis "Library for the miniSEED data format")
+    (description "The miniSEED library provides a framework for manipulation
+of SEED data records, a format for commonly used for seismological time
+series and related data.  The library includes the functionality to read
+and write data records, in addition to reconstructing time series
+from multiple records.")
+    (license license:asl2.0)))
 
 (define-public python-rtree
   (package
@@ -2575,7 +2681,7 @@ track your position right from your laptop.")
            qtbase-5
            qtimageformats-5
            qtlocation
-           qtsensors
+           qtsensors-5
            zlib))
     (native-inputs
      (list doxygen
@@ -2645,6 +2751,11 @@ orienteering sport.")
                              (guix build python-build-system))
          #:phases
          (modify-phases %standard-phases
+           (add-after 'unpack 'fix-lapack
+             (lambda _
+               (substitute* "./configure"
+                 (("-lblas") "-lopenblas")
+                 (("-llapack") "-lopenblas"))))
            (replace 'configure
              (lambda* (#:key inputs outputs #:allow-other-keys)
                (let ((shell (search-input-file inputs "/bin/bash")))
@@ -2977,7 +3088,7 @@ growing set of geoscientific methods.")
            qtkeychain
            qtlocation
            qtmultimedia-5
-           qtserialport
+           qtserialport-5
            qtsvg-5
            qwt
            ;; saga
@@ -3187,23 +3298,19 @@ latitude and longitude.")
 (define-public gplates
   (package
     (name "gplates")
-    ;; Note: use a pre-release to cope with newer Boost, ref
-    ;; https://discourse.gplates.org/t/compilation-error-with-boost-1-77/452/3
-    (version "2.3.01-beta.3")
+    (version "2.4")
     (source (origin
-              (method url-fetch)
-              (uri "https://cloudstor.aarnet.edu.au/plus/s\
-/ojsYNOyUYE3evNp/download?path=%2F&files=gplates_2.3.1-beta.3_src.zip")
-              (file-name (string-append name "-" version ".zip"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/GPlates/GPlates")
+                    (commit (string-append "GPlates-" version))))
               (sha256
                (base32
-                "06i87dfab0cq9gdi5mh6sf9wigawpp0d05zbyslv910443i26gwv"))))
+                "1awb4igchgpmrvj6blxd1w81c617bs66w6cfrwvf30n6rjlyn6q5"))
+              (file-name (git-file-name name version))))
     (build-system cmake-build-system)
     (arguments
-     `(#:configure-flags (list "-DBoost_NO_BOOST_CMAKE=ON")
-       #:tests? #f))                    ;no test target
-    (native-inputs
-     (list unzip))                      ;for the beta
+     (list #:tests? #f))                    ;no test target
     (inputs
      (list boost
            cgal

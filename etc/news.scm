@@ -9,7 +9,7 @@
 ;; Copyright © 2020, 2022 Marius Bakke <marius@gnu.org>
 ;; Copyright © 2020, 2021 Mathieu Othacehe <m.othacehe@gmail.com>
 ;; Copyright © 2020 Jan (janneke) Nieuwenhuizen <janneke@gnu.org>
-;; Copyright © 2020, 2021, 2022, 2023 Maxim Cournoyer <maxim.cournoyer@gmail.com>
+;; Copyright © 2020, 2021, 2022, 2023, 2024 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;; Copyright © 2021–2023 Leo Famulari <leo@famulari.name>
 ;; Copyright © 2021 Zhu Zihao <all_but_last@163.com>
 ;; Copyright © 2021 Chris Marusich <cmmarusich@gmail.com>
@@ -20,6 +20,9 @@
 ;; Copyright © 2022 Thiago Jung Bauermann <bauermann@kolabnow.com>
 ;; Copyright © 2024 Oleg Pykhalov <go.wigust@gmail.com>
 ;; Copyright © 2024 Wilko Meyer <w@wmeyer.eu>
+;; Copyright © 2024 Hilton Chain <hako@ultrarare.space>
+;; Copyright © 2024 Liliana Marie Prikler <liliana.prikler@gmail.com>
+;; Copyright © 2024 Vivien Kraus <vivien@planete-kraus.eu>
 ;;
 ;; Copying and distribution of this file, with or without modification, are
 ;; permitted in any medium without royalty provided the copyright notice and
@@ -27,6 +30,100 @@
 
 (channel-news
  (version 0)
+
+ (entry (commit "fdfd7667c66cf9ce746330f39bcd366e124460e1")
+        (title
+         (en "@code{nss-certs} is now included in @code{%base-packages}")
+         (fr "@code{nss-certs} est maintenant inclus dans @code{%base-packages}"))
+        (body
+         (en "The @code{nss-certs} package is now included in the
+@code{%base-packages}, the default value for the @code{packages} field of the
+@code{operating-system} record.")
+         (fr "Le paquet @code{nss-certs} est maintenant inclus dans
+@code{%base-packages}, la valeur par défaut du champ @code{packages} de
+l'enregistrement @code{operating-system}.")))
+
+ (entry (commit "b4aed68e960116b2b60f68ea1468d7a526149823")
+        (title
+         (en "Linux-libre LTS kernel updated to 6.6")
+         (de "Linux-libre LTS Kernel wird auf 6.6 aktualisiert"))
+        (body
+         (en "The default version of the @code{linux-libre-lts} kernel has been
+             updated to the 6.6 longterm release series.")
+         (de "Der standardmäßig verwendete @code{linux-libre-lts}-Kernel basiert
+              jetzt auf der 6.6-Versionsreihe (Langzeitunterstützung).")))
+
+ (entry (commit "523f3def65ab061a87f4fc9e6f9008e6a78fafb5")
+        (title
+         (en "GNOME updated to version 44 with a more modular desktop service")
+         (de "GNOME auf Version 44 aktualisiert mit modularem Dienst")
+         (fr "Mise à jour de GNOME en version 44 avec un service plus modulaire")
+         (zh "GNOME 44 更新，帶來更加模塊化的桌面服務"))
+        (body
+         (en "The @code{gnome-desktop-service-type} now differentiates between
+shell, utilities, and extra-packages among other fields to bring more structure
+in its configuration.
+
+With the update to GNOME 44, some shell extensions have been deprecated and
+others removed.  If any @code{gnome-shell-extension-@dots{}} package causes
+an error while running your usual update routine, make sure to remove it from
+your profile.")
+         (de "Der Dienst @code{gnome-desktop-service-type} unterscheidet nun
+unter anderem zwischen den Feldern shell, utilities und extra-packages, und
+bringt so etwas mehr Struktur in die Konfiguration.
+
+Mit dem Update zu GNOME 44 wurden einige Erweiterungen als obsolet deklariert
+und andere entfernt.  Falls ein Paket, dessen Name mit
+@code{gnome-shell-extension-} beginnt, zu einem Fehler während Ihrer
+Update-Routine führt, entfernen Sie es von Ihrem Profil.")
+         (fr "Le service @code{gnome-desktop-service-type} sépare
+maintenant les champs @code{shell}, @code{utilities} et @code{extra-
+packages} (entre autres) pour donner plus de structure à sa
+configuration.
+
+Pendant la mise à jour vers GNOME 44, certaines extensions du shell ont
+été dépréciées et d’autres supprimées. Si un paquet nommé
+@code{gnome-shell-extension-@dots{}} émet une erreur quand vous
+effectuez la mise à jour, vous devriez l’enlever de votre profil.")
+         (zh "@code{gnome-desktop-service-type} 設置新增 @code{shell}、
+@code{utilities}、@code{extra-packages} 等字段，使得 GNOME 桌面配置更加模塊化。
+
+隨着 GNOME 44 更新，一些 GNOME Shell 拓展已被棄用或刪除。更新中若有關於
+@code{gnome-shell-extension-@dots{}} 軟件包的錯誤，請將對應軟件包從 profile 中
+刪除。")))
+
+ (entry (commit "06d01c610e3bee61e38a177aecda5982d5b338ae")
+        (title
+         (en "The GNOME Display Manager uses Wayland by default")
+         (de "GNOME Display Manager nutzt nun Wayland als Vorgabe")
+         (fr "GDM utilise Wayland par défaut")
+         (zh "GNOME 顯示管理器（GDM）服務默認啓用 Wayland 支持"))
+        (body
+         (en "The @code{gdm-service-type} is configured to use Wayland instead
+of Xorg by default.")
+         (de "Der Dienst @code{gdm-service-type} verwendet nun Wayland
+als Vorgabe anstelle von Xorg.")
+         (fr "Le service @code{gdm-service-type} est configuré par défaut pour
+utiliser Wayland au lieu de Xorg.")
+         (zh "@code{gdm-service-type} 預設已由 Xorg 改爲 Wayland。")))
+
+ (entry (commit "498db4de1f09414adf68a3a383f0178434035179")
+        (title
+         (en "The udev service also manages hardware configuration files")
+         (de "Udev verwaltet nun auch Hardwarekonfigurationen")
+         (fr "Le service udev gère maintenant les configurations de matériel")
+         (zh "udev 服務現可管理硬件配置文件"))
+        (body
+         (en "The @code{udev-service-type} can now be configured and extended
+with eudev hardware configuration files (named @dfn{hwdb} by the eudev
+project).")
+         (de "Der Udev-Dienst kann nun mit Hardwaredatenbanken (auch als
+@dfn{hwdb} bekannt) konfiguriert und erweitert werden.")
+         (fr "Le type de service @code{udev-service-type} peut maintenant être
+configuré et étendu avec des fichiers de configuration de matériel (appelés
+@dfn{hwdb} par le projet eudev).")
+         (zh "現可使用 eudev 的硬件配置文件（@dfn{hwdb}）設置及拓展
+@code{udev-service-type}。")))
 
  (entry (commit "ff1251de0bc327ec478fc66a562430fbf35aef42")
         (title

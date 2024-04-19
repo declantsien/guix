@@ -41,7 +41,7 @@
 # Copyright © 2020, 2023 Vinicius Monego <monego@posteo.net>
 # Copyright © 2021 Björn Höfling <bjoern.hoefling@bjoernhoefling.de>
 # Copyright © 2021 Greg Hogan <code@greghogan.com>
-# Copyright © 2021, 2022, 2023 Philip McGrath <philip@philipmcgrath.com>
+# Copyright © 2021-2024 Philip McGrath <philip@philipmcgrath.com>
 # Copyright © 2021 Arun Isaac <arunisaac@systemreboot.net>
 # Copyright © 2021 Sharlatan Hellseher <sharlatanus@gmail.com>
 # Copyright © 2021 Dmitry Polyakov <polyakov@liltechdude.xyz>
@@ -49,7 +49,7 @@
 # Copyright © 2021 Simon Tournier <zimon.toutoune@gmail.com>
 # Copyright © 2022 Daniel Meißner <daniel.meissner-i4k@ruhr-uni-bochum.de>
 # Copyright © 2022 Remco van 't Veer <remco@remworks.net>
-# Copyright © 2022 Artyom V. Poptsov <poptsov.artyom@gmail.com>
+# Copyright © 2022, 2024 Artyom V. Poptsov <poptsov.artyom@gmail.com>
 # Copyright © 2022, 2023 John Kehayias <john.kehayias@protonmail.com>
 # Copyright © 2022 muradm <mail@muradm.net>
 # Copyright © 2022 Hilton Chain <hako@ultrarare.space>
@@ -60,6 +60,7 @@
 # Copyright © 2023 Ivana Drazovic <iv.dra@hotmail.com>
 # Copyright © 2023 Andy Tai <atai@atai.org>
 # Copyright © 2023 B. Wilson <elaexuotee@wilsonb.com>
+# Copyright © 2023 Bruno Victal <mirai@makinata.eu>
 # Copyright © 2023 gemmaro <gemmaro.dev@gmail.com>
 # Copyright © 2023 Herman Rimm <herman@rimm.ee>
 # Copyright © 2023 Troy Figiel <troy@troyfigiel.com>
@@ -220,6 +221,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/cybersecurity.scm		\
   %D%/packages/cyrus-sasl.scm			\
   %D%/packages/darwin.scm			\
+  %D%/packages/data-language.scm		\
   %D%/packages/databases.scm			\
   %D%/packages/datamash.scm			\
   %D%/packages/datastructures.scm		\
@@ -413,6 +415,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/libidn.scm			\
   %D%/packages/libphidget.scm			\
   %D%/packages/libreoffice.scm			\
+  %D%/packages/librewolf.scm			\
   %D%/packages/libsigsegv.scm			\
   %D%/packages/libunistring.scm			\
   %D%/packages/libusb.scm			\
@@ -608,6 +611,7 @@ GNU_SYSTEM_MODULES =				\
   %D%/packages/sml.scm				\
   %D%/packages/solidity.scm			\
   %D%/packages/sourcehut.scm			\
+  %D%/packages/specifications.scm		\
   %D%/packages/speech.scm			\
   %D%/packages/sphinx.scm			\
   %D%/packages/spice.scm			\
@@ -939,6 +943,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/antlr3-3_1-fix-java8-compilation.patch	\
   %D%/packages/patches/antlr3-3_3-fix-java8-compilation.patch	\
   %D%/packages/patches/aoflagger-use-system-provided-pybind11.patch \
+  %D%/packages/patches/appstream-force-reload-stemmer.patch	\
   %D%/packages/patches/apr-fix-atomics.patch			\
   %D%/packages/patches/apr-skip-getservbyname-test.patch	\
   %D%/packages/patches/aria2-unbundle-wslay.patch		\
@@ -950,7 +955,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/ath9k-htc-firmware-binutils.patch	\
   %D%/packages/patches/ath9k-htc-firmware-gcc.patch		\
   %D%/packages/patches/ath9k-htc-firmware-gcc-compat.patch	\
-  %D%/packages/patches/ath9k-htc-firmware-objcopy.patch		\
   %D%/packages/patches/atlas-gfortran-compat.patch		\
   %D%/packages/patches/audacity-ffmpeg-fallback.patch	\
   %D%/packages/patches/audiofile-fix-datatypes-in-tests.patch	\
@@ -1012,11 +1016,14 @@ dist_patch_DATA =						\
   %D%/packages/patches/calibre-no-updates-dialog.patch		\
   %D%/packages/patches/calibre-remove-test-sqlite.patch		\
   %D%/packages/patches/calibre-remove-test-unrar.patch		\
+  %D%/packages/patches/calls-disable-application-test.patch	\
+  %D%/packages/patches/calls-disable-sip-test.patch		\
   %D%/packages/patches/camlboot-dynamically-allocate-stack-signal.patch	\
   %D%/packages/patches/catdoc-CVE-2017-11110.patch		\
   %D%/packages/patches/ccextractor-add-missing-header.patch	\
   %D%/packages/patches/ccextractor-autoconf-tesseract.patch	\
   %D%/packages/patches/ccextractor-fix-ocr.patch		\
+  %D%/packages/patches/chez-scheme-backport-configure.patch	\
   %D%/packages/patches/chez-scheme-bin-sh.patch			\
   %D%/packages/patches/circos-remove-findbin.patch		\
   %D%/packages/patches/cdparanoia-fpic.patch			\
@@ -1046,6 +1053,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/clang-16-remove-crypt-interceptors.patch	\
   %D%/packages/patches/clang-17.0-libc-search-path.patch	\
   %D%/packages/patches/clang-17.0-link-dsymutil-latomic.patch	\
+  %D%/packages/patches/clang-18.0-libc-search-path.patch	\
   %D%/packages/patches/clang-runtime-asan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-esan-build-fixes.patch	\
   %D%/packages/patches/clang-runtime-13-glibc-2.36-compat.patch	\
@@ -1064,6 +1072,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/clucene-pkgconfig.patch			\
   %D%/packages/patches/cmake-curl-certificates-3.24.patch	\
   %D%/packages/patches/coda-use-system-libs.patch		\
+  %D%/packages/patches/cogl-fix-double-free.patch		\
   %D%/packages/patches/collectd-5.11.0-noinstallvar.patch		\
   %D%/packages/patches/combinatorial-blas-awpm.patch		\
   %D%/packages/patches/combinatorial-blas-io-fix.patch		\
@@ -1125,9 +1134,11 @@ dist_patch_DATA =						\
   %D%/packages/patches/dstat-fix-crash-when-specifying-delay.patch	\
   %D%/packages/patches/dstat-skip-devices-without-io.patch	\
   %D%/packages/patches/dtc-meson-cell-overflow.patch		\
+  %D%/packages/patches/duc-fix-test-sh.patch                    \
   %D%/packages/patches/dune-common-skip-failing-tests.patch	\
   %D%/packages/patches/dune-grid-add-missing-include-cassert.patch	\
   %D%/packages/patches/dune-istl-fix-solver-playground.patch	\
+  %D%/packages/patches/durden-shadow-arcan.patch		\
   %D%/packages/patches/dvd+rw-tools-add-include.patch 		\
   %D%/packages/patches/dynaconf-unvendor-deps.patch		\
   %D%/packages/patches/dyninst-fix-glibc-compatibility.patch	\
@@ -1143,6 +1154,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-all-the-icons-remove-duplicate-rs.patch	\
   %D%/packages/patches/emacs-deferred-fix-number-of-arguments.patch	\
   %D%/packages/patches/emacs-elpy-dup-test-name.patch		\
+  %D%/packages/patches/emacs-disable-jit-compilation.patch			\
   %D%/packages/patches/emacs-exec-path.patch			\
   %D%/packages/patches/emacs-fix-scheme-indent-function.patch	\
   %D%/packages/patches/emacs-git-email-missing-parens.patch	\
@@ -1152,6 +1164,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/emacs-kv-fix-tests.patch	\
   %D%/packages/patches/emacs-lispy-fix-thread-last-test.patch   \
   %D%/packages/patches/emacs-native-comp-driver-options.patch   \
+  %D%/packages/patches/emacs-native-comp-fix-filenames.patch   \
   %D%/packages/patches/emacs-next-exec-path.patch   \
   %D%/packages/patches/emacs-next-native-comp-driver-options.patch   \
   %D%/packages/patches/emacs-pasp-mode-quote-file-names.patch  \
@@ -1194,6 +1207,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/fasthenry-spFactor.patch			\
   %D%/packages/patches/fbreader-curl-7.62.patch		\
   %D%/packages/patches/fbreader-fix-icon.patch		\
+  %D%/packages/patches/feedbackd-use-system-gmobile.patch	\
   %D%/packages/patches/fenics-dolfin-algorithm.patch		\
   %D%/packages/patches/fenics-dolfin-demo-init.patch		\
   %D%/packages/patches/fenics-dolfin-boost.patch		\
@@ -1203,6 +1217,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/ffmpeg-jami-libopusdec-enable-FEC.patch	\
   %D%/packages/patches/ffmpeg-jami-libopusenc-enable-FEC.patch	\
   %D%/packages/patches/ffmpeg-jami-libopusenc-reload-packet-loss-at-encode.patch \
+  %D%/packages/patches/ffmpeg-jami-pipewiregrab-source-filter.patch	\
   %D%/packages/patches/ffmpeg-jami-remove-mjpeg-log.patch	\
   %D%/packages/patches/ffmpeg-jami-screen-sharing-x11-fix.patch	\
   %D%/packages/patches/ffmpeg-remove-compressed_ten_bit_format.patch	\
@@ -1308,6 +1323,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gcc-13-libsanitizer-no-crypt.patch	\
   %D%/packages/patches/gcc-13.2.0-libstdc++-docbook-xsl-uri.patch	\
   %D%/packages/patches/gcc-13.2.0-libstdc++-info-install-fix.patch	\
+  %D%/packages/patches/gcc-13-cross-system-header-dir.patch     \
   %D%/packages/patches/gcolor3-update-libportal-usage.patch	\
   %D%/packages/patches/gd-fix-tests-on-i686.patch		\
   %D%/packages/patches/gd-brect-bounds.patch			\
@@ -1339,12 +1355,10 @@ dist_patch_DATA =						\
   %D%/packages/patches/ghostscript-no-header-uuid.patch		\
   %D%/packages/patches/ghostscript-no-header-creationdate.patch \
   %D%/packages/patches/git-filter-repo-generate-doc.patch	\
-  %D%/packages/patches/gitg-fix-positional-argument.patch	\
   %D%/packages/patches/gklib-suitesparse.patch			\
   %D%/packages/patches/glib-appinfo-watch.patch			\
   %D%/packages/patches/glib-gerror-null-format.patch	\
   %D%/packages/patches/glib-networking-disable-connection-tls1.2-test.patch	\
-  %D%/packages/patches/glib-networking-gnutls-binding.patch	\
   %D%/packages/patches/glib-skip-failing-test.patch		\
   %D%/packages/patches/glibc-2.33-riscv64-miscompilation.patch	\
   %D%/packages/patches/glibc-CVE-2019-7309.patch		\
@@ -1383,11 +1397,12 @@ dist_patch_DATA =						\
   %D%/packages/patches/glibc-2.29-git-updates.patch     	\
   %D%/packages/patches/glibc-2.29-supported-locales.patch     	\
   %D%/packages/patches/glibc-supported-locales.patch     	\
-  %D%/packages/patches/glslang-install-static-libs.patch     	\
+  %D%/packages/patches/gmobile-make-it-installable.patch	\
   %D%/packages/patches/gmp-arm-asm-nothumb.patch		\
   %D%/packages/patches/gmp-faulty-test.patch			\
   %D%/packages/patches/gnash-fix-giflib-version.patch	        \
   %D%/packages/patches/gnome-2048-fix-positional-argument.patch	\
+  %D%/packages/patches/gnome-control-center-firmware-security.patch	\
   %D%/packages/patches/gnome-control-center-libexecdir.patch	\
   %D%/packages/patches/gnome-dictionary-meson-i18n.patch	\
   %D%/packages/patches/gnome-online-miners-tracker-3.patch	\
@@ -1444,6 +1459,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/guile-rsvg-pkgconfig.patch		\
   %D%/packages/patches/guile-emacs-fix-configure.patch		\
   %D%/packages/patches/gtk2-fix-builder-test.patch		\
+  %D%/packages/patches/gtk2-harden-list-store.patch		\
   %D%/packages/patches/gtk2-respect-GUIX_GTK2_PATH.patch	\
   %D%/packages/patches/gtk2-respect-GUIX_GTK2_IM_MODULE_FILE.patch \
   %D%/packages/patches/gtk2-theme-paths.patch			\
@@ -1453,6 +1469,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/gtk4-respect-GUIX_GTK4_PATH.patch    	\
   %D%/packages/patches/gtkglext-disable-disable-deprecated.patch \
   %D%/packages/patches/gtksourceview-2-add-default-directory.patch \
+  %D%/packages/patches/gwenview-kimageannotator.patch		\
   %D%/packages/patches/gzdoom-search-in-installed-share.patch	\
   %D%/packages/patches/gzdoom-find-system-libgme.patch	\
   %D%/packages/patches/hdf4-reproducibility.patch 		\
@@ -1500,8 +1517,9 @@ dist_patch_DATA =						\
   %D%/packages/patches/itk-snap-alt-glibc-compat.patch		\
   %D%/packages/patches/jami-disable-integration-tests.patch	\
   %D%/packages/patches/jami-libjami-headers-search.patch	\
-  %D%/packages/patches/jami-qml-tests-discovery.patch		\
+  %D%/packages/patches/jami-qwindowkit.patch			\
   %D%/packages/patches/jami-skip-tests-requiring-internet.patch	\
+  %D%/packages/patches/jami-tests-qtwebengine-ifdef-to-if.patch	\
   %D%/packages/patches/jami-unbundle-dependencies.patch		\
   %D%/packages/patches/jamvm-1.5.1-aarch64-support.patch	\
   %D%/packages/patches/jamvm-1.5.1-armv7-support.patch	\
@@ -1532,6 +1550,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/json-c-0.12-CVE-2020-12762.patch		\
   %D%/packages/patches/julia-SOURCE_DATE_EPOCH-mtime.patch	\
   %D%/packages/patches/julia-Use-MPFR-4.2.patch	                \
+  %D%/packages/patches/libcall-ui-make-it-installable.patch	\
   %D%/packages/patches/libcss-check-format.patch		\
   %D%/packages/patches/libextractor-tidy-support.patch		\
   %D%/packages/patches/libftdi-fix-paths-when-FTDIPP-set.patch	\
@@ -1581,6 +1600,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/liba52-use-mtune-not-mcpu.patch		\
   %D%/packages/patches/libaio-32bit-test.patch                  \
   %D%/packages/patches/libaio-riscv-test5.patch			\
+  %D%/packages/patches/libarchive-remove-potential-backdoor.patch	\
   %D%/packages/patches/libbase-fix-includes.patch		\
   %D%/packages/patches/libbase-use-own-logging.patch		\
   %D%/packages/patches/libbonobo-activation-test-race.patch	\
@@ -1592,6 +1612,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libcyaml-libyaml-compat.patch		\
   %D%/packages/patches/libexpected-use-provided-catch2.patch	\
   %D%/packages/patches/libgda-cve-2021-39359.patch		\
+  %D%/packages/patches/libgda-disable-data-proxy-test.patch     \
   %D%/packages/patches/libgda-fix-build.patch			\
   %D%/packages/patches/libgda-fix-missing-initialization.patch	\
   %D%/packages/patches/libgda-skip-postgresql-tests.patch	\
@@ -1622,7 +1643,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/libphonenumber-reproducible-build.patch	\
   %D%/packages/patches/libqalculate-3.8.0-libcurl-ssl-fix.patch	\
   %D%/packages/patches/libquicktime-ffmpeg.patch 		\
-  %D%/packages/patches/librecad-support-for-boost-1.76.patch	\
   %D%/packages/patches/libsepol-versioned-docbook.patch		\
   %D%/packages/patches/libtar-CVE-2013-4420.patch 		\
   %D%/packages/patches/libtgvoip-disable-sse2.patch 		\
@@ -1713,7 +1733,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/mit-krb5-hurd.patch			\
   %D%/packages/patches/mixxx-link-qtscriptbytearray-qtscript.patch	\
   %D%/packages/patches/mixxx-system-googletest-benchmark.patch	\
-  %D%/packages/patches/mm-common-reproducible-tarball.patch	\
   %D%/packages/patches/mpc123-initialize-ao.patch		\
   %D%/packages/patches/mpg321-CVE-2019-14247.patch		\
   %D%/packages/patches/mpg321-gcc-10.patch			\
@@ -1725,7 +1744,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/mupen64plus-ui-console-notice.patch	\
   %D%/packages/patches/mupen64plus-video-z64-glew-correct-path.patch    \
   %D%/packages/patches/musl-cross-locale.patch			\
-  %D%/packages/patches/mutter-fix-inverted-test.patch		\
   %D%/packages/patches/mutt-store-references.patch		\
   %D%/packages/patches/m17n-lib-1.8.0-use-pkg-config-for-freetype.patch	\
   %D%/packages/patches/nanosvg-prusa-slicer.patch		\
@@ -1774,7 +1792,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/openboardview-use-system-imgui.patch	\
   %D%/packages/patches/openboardview-use-system-mpc.patch	\
   %D%/packages/patches/openbox-python3.patch			\
-  %D%/packages/patches/opencolorio-fix-build-with-gcc11.patch	\
   %D%/packages/patches/openjdk-currency-time-bomb.patch		\
   %D%/packages/patches/openjdk-currency-time-bomb2.patch	\
   %D%/packages/patches/openjdk-9-pointer-comparison.patch       \
@@ -1801,7 +1818,6 @@ dist_patch_DATA =						\
   %D%/packages/patches/openjdk-15-xcursor-no-dynamic.patch	\
   %D%/packages/patches/openjdk-21-fix-rpath.patch		\
   %D%/packages/patches/openmpi-mtl-priorities.patch		\
-  %D%/packages/patches/openssh-gcc-13-ppc64le-fzero-call-used-regs.patch	\
   %D%/packages/patches/openssh-trust-guix-store-directory.patch	\
   %D%/packages/patches/openresolv-restartcmd-guix.patch	\
   %D%/packages/patches/openrgb-unbundle-hueplusplus.patch	\
@@ -1811,6 +1827,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/opentaxsolver-file-browser-fix.patch     \
   %D%/packages/patches/open-zwave-hidapi.patch			\
   %D%/packages/patches/orangeduck-mpc-fix-pkg-config.patch	\
+  %D%/packages/patches/orbit2-fix-array-allocation-32bit.patch \
   %D%/packages/patches/orpheus-cast-errors-and-includes.patch	\
   %D%/packages/patches/osip-CVE-2017-7853.patch			\
   %D%/packages/patches/ots-no-include-missing-file.patch	\
@@ -1822,6 +1839,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/pam-krb5-CVE-2020-10595.patch		\
   %D%/packages/patches/pango-skip-libthai-test.patch		\
   %D%/packages/patches/password-store-tree-compat.patch		\
+  %D%/packages/patches/pdfpc-build-with-vala-0.56.patch         \
   %D%/packages/patches/petri-foo-0.1.87-fix-recent-file-not-exist.patch			\
   %D%/packages/patches/plasma-framework-fix-KF5PlasmaMacros.cmake.patch \
   %D%/packages/patches/plasp-fix-normalization.patch \
@@ -1993,10 +2011,12 @@ dist_patch_DATA =						\
   %D%/packages/patches/qemu-fix-agent-paths.patch 		\
   %D%/packages/patches/qrcodegen-cpp-make-install.patch		\
   %D%/packages/patches/qtbase-absolute-runpath.patch		\
+  %D%/packages/patches/qtbase-find-tools-in-PATH.patch		\
+  %D%/packages/patches/qtbase-qmake-fix-includedir.patch 	\
+  %D%/packages/patches/qtbase-qmlimportscanner-qml-import-path.patch 	\
   %D%/packages/patches/qtbase-moc-ignore-gcc-macro.patch	\
   %D%/packages/patches/qtbase-qmake-use-libname.patch		\
   %D%/packages/patches/qtbase-5-use-TZDIR.patch			\
-  %D%/packages/patches/qtbase-use-TZDIR.patch			\
   %D%/packages/patches/qtscript-disable-tests.patch		\
   %D%/packages/patches/quagga-reproducible-build.patch          \
   %D%/packages/patches/quickswitch-fix-dmenu-check.patch	\
@@ -2022,9 +2042,8 @@ dist_patch_DATA =						\
   %D%/packages/patches/rpcbind-CVE-2017-8779.patch		\
   %D%/packages/patches/rtags-separate-rct.patch			\
   %D%/packages/patches/racket-chez-scheme-bin-sh.patch		\
-  %D%/packages/patches/racket-backport-8.11-layered-docs.patch	\
+  %D%/packages/patches/racket-backport-8.12-chez-configure.patch	\
   %D%/packages/patches/racket-rktio-bin-sh.patch		\
-  %D%/packages/patches/racket-zuo-bin-sh.patch			\
   %D%/packages/patches/remake-impure-dirs.patch			\
   %D%/packages/patches/restartd-update-robust.patch             \
   %D%/packages/patches/restic-0.9.6-fix-tests-for-go1.15.patch	\
@@ -2082,6 +2101,7 @@ dist_patch_DATA =						\
   %D%/packages/patches/libsequoia-remove-store.patch		\
   %D%/packages/patches/serf-python3.patch			\
   %D%/packages/patches/shakespeare-spl-fix-grammar.patch		\
+  %D%/packages/patches/shared-mime-info-xdgmime-path.patch	\
   %D%/packages/patches/sharutils-CVE-2018-1000097.patch		\
   %D%/packages/patches/slim-config.patch			\
   %D%/packages/patches/slim-login.patch				\
@@ -2259,10 +2279,12 @@ dist_patch_DATA =						\
   %D%/packages/patches/xygrib-fix-finding-data.patch		\
   %D%/packages/patches/xygrib-newer-proj.patch			\
   %D%/packages/patches/yggdrasil-extra-config.patch	\
+  %D%/packages/patches/zathura-use-struct-initializers.patch    \
   %D%/packages/patches/zig-0.9-riscv-support.patch		\
   %D%/packages/patches/zig-use-baseline-cpu-by-default.patch	\
   %D%/packages/patches/zig-use-system-paths.patch		\
-  %D%/packages/patches/zsh-egrep-failing-test.patch
+  %D%/packages/patches/zsh-egrep-failing-test.patch		\
+  %D%/packages/patches/zuo-bin-sh.patch
 
 MISC_DISTRO_FILES =				\
   %D%/packages/ld-wrapper.in

@@ -738,7 +738,7 @@ purposes developed at Queen Mary, University of London.")
 (define-public ardour
   (package
     (name "ardour")
-    (version "8.0")
+    (version "8.4")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -755,7 +755,7 @@ purposes developed at Queen Mary, University of London.")
 namespace ARDOUR { const char* revision = \"" version "\" ; const char* date = \"\"; }")))))
               (sha256
                (base32
-                "1a2dbysd64njiw087ypkwlvr31qz3dvfaca55nq2bc4fmm71mgv4"))
+                "17gh1yaaby17zwx43h5v8dsrcznks9pn8jddc3wadq13b5x7zb7a"))
               (file-name (string-append name "-" version))))
     (build-system waf-build-system)
     (arguments
@@ -764,6 +764,7 @@ namespace ARDOUR { const char* revision = \"" version "\" ; const char* date = \
       '(list "--cxx11"                  ;required by gtkmm
              "--optimize"
              "--no-phone-home"          ;don't contact ardour.org
+             "--no-ytk"                 ;don't use bundled GTK2
              "--freedesktop"            ;build .desktop file
              "--test"                   ;build unit tests
              "--use-external-libs")     ;use system libraries
@@ -1561,7 +1562,7 @@ emulation (valve, tape), bit fiddling (decimator, pointer-cast), etc.")
 (define-public libdjinterop
   (package
     (name "libdjinterop")
-    (version "0.16.0")
+    (version "0.20.2")
     (source
      (origin
        (method git-fetch)
@@ -1570,15 +1571,8 @@ emulation (valve, tape), bit fiddling (decimator, pointer-cast), etc.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "16nrqpr90vb9ggmp9j73m0hspd7pmfdhh0g6iyp8vd7kx7g17qnk"))))
-    (build-system meson-build-system)
-    (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         ;; crate_test writes a database file to the source tree.
-         (add-after 'unpack 'make-git-checkout-writable
-           (lambda _
-             (for-each make-file-writable (find-files ".")))))))
+        (base32 "0gbaji3d105vwshjfmnbxqrs42jjjxp41jqj5srncrfv3xmzsfkr"))))
+    (build-system cmake-build-system)
     (native-inputs
      (list boost pkg-config))
     (inputs
@@ -6337,7 +6331,7 @@ and DSD streams.")
 (define-public qpwgraph
   (package
     (name "qpwgraph")
-    (version "0.6.2")
+    (version "0.6.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -6346,7 +6340,7 @@ and DSD streams.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0185hxbwqxhjiyym0s7bmrm50f3p4bnvx92qqmgvg3zd7r1x8m8s"))))
+                "04ddcrc1r9il275jzcmr3wpii1is0s3hifc3a3h4aamxf1facdcr"))))
     (build-system cmake-build-system)
     (arguments
      (list #:tests? #f))                ; no tests

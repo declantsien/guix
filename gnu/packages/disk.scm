@@ -28,6 +28,7 @@
 ;;; Copyright © 2023 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2023 Morgan Smith <Morgan.J.Smith@outlook.com>
 ;;; Copyright © 2023 Zheng Junjie <873216071@qq.com>
+;;; Copyright © 2024 Sharlatan Hellseher <sharlatanus@gmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -70,6 +71,7 @@
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages golang)
   #:use-module (gnu packages golang-build)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages graphics)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
@@ -505,14 +507,14 @@ scheme.")
 (define-public ddrescue
   (package
     (name "ddrescue")
-    (version "1.27")
+    (version "1.28")
     (source
      (origin
       (method url-fetch)
       (uri (string-append "mirror://gnu/ddrescue/ddrescue-"
                           version ".tar.lz"))
       (sha256
-       (base32 "1srj68c7q0r5m7rzv3km43ndcs7xjw053r336vjiakx4qnc0rj1q"))))
+       (base32 "1h8hxgxgwz0ih4p38b6k49i1b6r7qli8b5fhr81ivk51gixc09k6"))))
     (build-system gnu-build-system)
     (arguments
      `(#:configure-flags (list (string-append "CXX=" ,(cxx-for-target)))))
@@ -1293,29 +1295,35 @@ on your file system and offers to remove it.  @command{rmlint} can find:
 (define-public lf
   (package
     (name "lf")
-    ;; When updating, remove go-github-com-gdamore-tcell-v2-2.3 from golang.scm.
-    (version "27")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/gokcehan/lf")
-                    (commit (string-append "r" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "1piym8za0iw2s8yryh39y072f90mzisv89ffvn1jzb71f71mbfqa"))))
+    (version "31")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/gokcehan/lf")
+             (commit (string-append "r" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "03icsf4c3j7295s1d8s6srz5gf09a3lghgw3zfcd86p03zhkzsaf"))))
     (build-system go-build-system)
-    (native-inputs
-     (list go-github-com-mattn-go-runewidth go-golang-org-x-term
-           go-gopkg-in-djherbis-times-v1 go-github-com-gdamore-tcell-v2-2.3))
     (arguments
-     `(#:import-path "github.com/gokcehan/lf"))
+     (list
+      #:go go-1.18
+      #:install-source? #f
+      #:import-path "github.com/gokcehan/lf"))
+    (native-inputs
+     (list go-github-com-djherbis-times
+           go-github-com-gdamore-tcell-v2
+           go-github-com-mattn-go-runewidth
+           go-golang-org-x-term
+           go-gopkg-in-djherbis-times-v1))
     (home-page "https://github.com/gokcehan/lf")
     (synopsis "Console file browser similar to Ranger")
-    (description "lf (as in \"list files\") is a terminal file manager
-written in Go.  It is heavily inspired by ranger with some missing and
-extra features.  Some of the missing features are deliberately omitted
-since they are better handled by external tools.")
+    (description
+     "@code{lf} (as in \"list files\") is a terminal file manager written in
+Go.  It is heavily inspired by @code{ranger} with some missing and extra
+features.  Some of the missing features are deliberately omitted since they
+are better handled by external tools.")
     (license license:expat)))
 
 (define-public xfe
@@ -1561,36 +1569,39 @@ reliably with @code{bmaptool} than with traditional tools, like @code{dd} or
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0sglcn38rgn6y3m5ahngizyn3x2rzhqjphs7g0ppnlinkz56rcv4"))))
+                "0sglcn38rgn6y3m5ahngizyn3x2rzhqjphs7g0ppnlinkz56rcv4"))
+              (patches
+               (search-patches "duc-fix-test-sh.patch"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'patch
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out")))
-               (substitute* "src/duc/cmd-ui.c"
-                 (("ncursesw/ncurses.h") "ncurses.h"))
-               (substitute* "examples/index.cgi"
-                 (("/usr/local/bin/duc")
-                  (string-append out "/bin/duc"))))))
-         (add-after 'install 'install-examples
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out (assoc-ref outputs "out"))
-                    (doc (string-append out "/share/doc/" ,name "-" ,version)))
-               (copy-recursively "examples" (string-append doc "/examples")))))
-         (replace 'check
-           (lambda* (#:key tests? #:allow-other-keys)
-             (substitute* "test.sh"
-               ;; Keep the test logs where --keep-failed can see them.
-               (("^(DUC_TEST_DIR=).*" _ assign)
-                (format #f "~a~a/test-directory~%" assign (getcwd)))
-               ;; XXX ‘actual size’ differed on my system (a consistent 348160
-               ;; bytes where the tests expect 540672).  However, the ‘apparent
-               ;; size’ matches, as does the actual test output.  Good enough…?
-               ((" [0-9]*B actual") " [0-9]*B actual"))
-             (when tests?
-               (invoke "./test.sh"))))))) ; no ‘check’ target
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'unpack 'patch
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let* ((out (assoc-ref outputs "out")))
+                (substitute* "src/duc/cmd-ui.c"
+                  (("ncursesw/ncurses.h") "ncurses.h"))
+                (substitute* "examples/index.cgi"
+                  (("/usr/local/bin/duc")
+                   (string-append out "/bin/duc"))))))
+          (add-after 'install 'install-examples
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let* ((out (assoc-ref outputs "out"))
+                     (doc (string-append out "/share/doc/" #$name "-" #$version)))
+                (copy-recursively "examples" (string-append doc "/examples")))))
+          (replace 'check
+            (lambda* (#:key tests? #:allow-other-keys)
+              (substitute* "test.sh"
+                ;; Keep the test logs where --keep-failed can see them.
+                (("^(DUC_TEST_DIR=).*" _ assign)
+                 (format #f "~a~a/test-directory~%" assign (getcwd)))
+                ;; XXX ‘actual size’ differed on my system (a consistent 348160
+                ;; bytes where the tests expect 540672).  However, the ‘apparent
+                ;; size’ matches, as does the actual test output.  Good enough…?
+                ((" [0-9]*B actual") " [0-9]*B actual"))
+              (when tests?
+                (invoke "./test.sh"))))))) ; no ‘check’ target
     (native-inputs
      (list autoconf automake libtool pkg-config))
     (inputs
@@ -1652,7 +1663,7 @@ gone and to help you to clean it up.")
 (define-public nwipe
   (package
     (name "nwipe")
-    (version "0.35")
+    (version "0.36")
     (source
      (origin
        (method git-fetch)
@@ -1661,7 +1672,7 @@ gone and to help you to clean it up.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1bj20y52qzz2ja56yf1pxqjg3lsda35c2k5hcj3lqm69jpsla2wq"))))
+        (base32 "075zwakv3lva46v6wab00l5x7bs2k73mzzhwlbvm839r8a6gm0dh"))))
     (build-system gnu-build-system)
     (arguments
      (list #:phases

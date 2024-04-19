@@ -437,7 +437,7 @@ number generators, public key cryptography and a plethora of other routines.")
 (define-public libtommath
   (package
     (name "libtommath")
-    (version "1.2.1")
+    (version "1.3.0")
     (outputs '("out" "static"))
     (source
       (origin
@@ -446,7 +446,7 @@ number generators, public key cryptography and a plethora of other routines.")
                             "download/v" version "/ltm-" version ".tar.xz"))
         (sha256
          (base32
-          "07qdxnmp5bhfw5za6mr2l2w0vb7494v9zs9h5vp6y9vlngbjaq4q"))))
+          "024xzb66abhla7kjks07ga05id9lq007cq3kxc41769m6kcp4qi9"))))
     (build-system gnu-build-system)
     (arguments
      '(#:phases

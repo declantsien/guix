@@ -90,6 +90,7 @@
   #:use-module (gnu packages protobuf)
   #:use-module (gnu packages pretty-print)
   #:use-module (gnu packages python)
+  #:use-module (gnu packages python-build)
   #:use-module (gnu packages python-check)
   #:use-module (gnu packages python-science)
   #:use-module (gnu packages python-web)
@@ -116,6 +117,7 @@
   #:use-module (guix build-system glib-or-gtk)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
+  #:use-module (guix build-system pyproject)
   #:use-module (guix build-system python)
   #:use-module (guix build-system qt))
 
@@ -1202,7 +1204,7 @@ satellites.")
 (define-public gqrx
   (package
     (name "gqrx")
-    (version "2.17.3")
+    (version "2.17.5")
     (source
      (origin
        (method git-fetch)
@@ -1211,7 +1213,7 @@ satellites.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "00pasp13gqglixl0iy9jb242vx1kczgpinjs3d8a1cl8yv5w6xkl"))))
+        (base32 "0dhjnsa0z6vv8dqv1zwfzxk6p4x1hvk22cikspcj8sggbyr8ymzm"))))
     (build-system qt-build-system)
     (native-inputs
      (list pkg-config))
@@ -1243,7 +1245,7 @@ using GNU Radio and the Qt GUI toolkit.")
 (define-public gqrx-scanner
   (package
     (name "gqrx-scanner")
-    (version "1.0.4")
+    (version "1.0.5")
     (source
      (origin
        (method git-fetch)
@@ -1252,7 +1254,7 @@ using GNU Radio and the Qt GUI toolkit.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0ar8kqfrd768l6y4kqgq3467xckrrpaq8zlwzz5l7lp8r41w5plr"))))
+        (base32 "0swciyqx5fnqmbb6d55cnjrc2bysr9vamyp0lzsvwgh2g2r29i7w"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f)) ; No test suite
@@ -1266,7 +1268,7 @@ radio receiver.")
 (define-public fldigi
   (package
     (name "fldigi")
-    (version "4.1.22")
+    (version "4.2.04")
     (source
      (origin
        (method git-fetch)
@@ -1275,10 +1277,10 @@ radio receiver.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1n1ljqsqar9s8yh8hn9yc1clabkhv4jidym3ibg25yb5svckscli"))))
+        (base32 "1s1dr1bpfa70sq5f0bi4vaszyzsa7ykpswc3znhmg7156mr027kj"))))
     (build-system gnu-build-system)
     (native-inputs
-     (list autoconf automake gettext-minimal pkg-config))
+     (list autoconf-2.71 automake gettext-minimal pkg-config))
     (inputs
      (list alsa-lib
            fltk
@@ -1305,7 +1307,7 @@ hardware.")
 (define-public flrig
   (package
     (name "flrig")
-    (version "1.4.05")
+    (version "2.0.04")
     (source
      (origin
        (method git-fetch)
@@ -1314,7 +1316,7 @@ hardware.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0pgkfzxqr2ybpbnf1y9nsr25k0zimdwr98mpvd7nazrv5l0y8kci"))))
+        (base32 "0q8zwg5l9x62qls71sqqw31c79y9df7cmin91w1v5pbigxac4v9v"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf automake pkg-config))
@@ -1331,7 +1333,7 @@ or USB connection.")
 (define-public flamp
   (package
     (name "flamp")
-    (version "2.2.07")
+    (version "2.2.12")
     (source
      (origin
        (method git-fetch)
@@ -1340,7 +1342,7 @@ or USB connection.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0rygd5w04nspxdj8qj81gpb3mgijvlmii74s1f4mihqs5kb8nwh6"))))
+        (base32 "0739x3b8a2f74s91mzpb43r5h71h81v0i12qjz0h0gg07ndzj3j7"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf automake pkg-config))
@@ -1356,7 +1358,7 @@ or USB connection.")
 (define-public flmsg
   (package
     (name "flmsg")
-    (version "4.0.19")
+    (version "4.0.23")
     (source
      (origin
        (method git-fetch)
@@ -1365,10 +1367,10 @@ or USB connection.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "157s6mvky9h094hkncm47964qh0bnwg0m2rw3wx0qj1mh5isxv4j"))))
+        (base32 "0nn2ai97a2izckg6lcnxa36ipmrz0pa4d8gdvk47fhwxlcr7pdrl"))))
     (build-system gnu-build-system)
     (native-inputs
-     (list autoconf automake pkg-config))
+     (list autoconf-2.71 automake pkg-config))
     (inputs
      (list fltk libx11 libxext libxfixes libxft))
     (synopsis "NBEMS messaging system")
@@ -1492,15 +1494,16 @@ E.g.: @code{(udev-rules-service 'bladerf bladerf)}.")
 (define-public hamlib
   (package
     (name "hamlib")
-    (version "4.4")
+    (version "4.5.5")
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append
-             "https://github.com/Hamlib/Hamlib/releases/download/"
-             version "/hamlib-" version ".tar.gz"))
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/Hamlib/Hamlib")
+             (commit version)))
+       (file-name (git-file-name name version))
        (sha256
-        (base32 "11r4i8gmxnb6ixpk4ns38c9xwj3qibp2v3pkhy2z0lhz0xxi1w4b"))))
+        (base32 "1z774z0g7ryamzvdm5f9b3py0lacrvmp2581jn3d581lw35hvfjw"))))
     (build-system gnu-build-system)
     (native-inputs
      (list autoconf
@@ -1524,14 +1527,7 @@ E.g.: @code{(udev-rules-service 'bladerf bladerf)}.")
          "--with-lua-binding"
          "--with-python-binding"
          "--with-tcl-binding"
-         "--with-xml-support")
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'bootstrap 'force-bootstrap
-           ;; The included configure script is misbuilt.  It will never find
-           ;; pkg-config, and hence any libraries that rely on it.  Rebuild it.
-           (lambda _
-             (delete-file "configure"))))))
+         "--with-xml-support")))
     (synopsis "Tools and API to control radios")
     (description
      "The Ham Radio Control Library (Hamlib) is a project to provide programs
@@ -1684,7 +1680,7 @@ instances over the network, and general QSO and DXpedition logging.")
            libusb
            qtbase-5
            qtmultimedia-5
-           qtserialport
+           qtserialport-5
            wsjtx-hamlib))
     (home-page "https://www.physics.princeton.edu/pulsar/k1jt/wsjtx.html")
     (synopsis "Weak-signal ham radio communication program")
@@ -1722,7 +1718,7 @@ weak-signal conditions.")
       qtbase-5
       qtwebsockets-5
       qtmultimedia-5
-      qtserialport))
+      qtserialport-5))
     (arguments
      `(#:tests? #f)) ; No test suite
     (synopsis "Weak-signal ham radio communication program, forked from WSJTX")
@@ -1799,7 +1795,7 @@ focused on DXing and being shaped by community of DXers.JTDX")
            libusb
            qtbase-5
            qtmultimedia-5
-           qtserialport
+           qtserialport-5
            wsjtx-hamlib))
     (home-page "http://js8call.com/")
     (synopsis "Weak-signal ham radio communication program")
@@ -2012,7 +2008,7 @@ modes:
 (define-public nanovna-saver
   (package
     (name "nanovna-saver")
-    (version "0.5.3")
+    (version "0.6.3")
     (source
      (origin
        (method git-fetch)
@@ -2021,14 +2017,19 @@ modes:
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1h0wzva8j7fqnpf0qy42bw9rdclgq3jdq902ajvd9v5iqcqs78n0"))))
-    (build-system python-build-system)
+        (base32 "192lg3hmhr4r9b6an1k61d89fvar4kvqp3qjmpkb489c2zgaggll"))))
+    (build-system pyproject-build-system)
     (native-inputs
-     (list python-cython))
+     (list python-cython python-setuptools-scm))
     (inputs
-     (list python-numpy python-pyqt python-pyserial python-scipy))
+     (list python-numpy python-pyqt-6 python-pyserial python-scipy))
     (arguments
-     '(#:tests? #f))
+     (list #:tests? #f
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'unpack 'set-version
+                 (lambda _
+                   (setenv "SETUPTOOLS_SCM_PRETEND_VERSION" #$version))))))
     (home-page "https://github.com/NanoVNA-Saver/nanovna-saver")
     (synopsis "GUI for NanoVNA devices")
     (description
@@ -2671,8 +2672,8 @@ voice formats.")
            qtlocation
            qtmultimedia-5
            qtquickcontrols2-5
-           qtserialport
-           qtspeech
+           qtserialport-5
+           qtspeech-5
            qtwebchannel-5
            qtwebengine-5
            qtwebsockets-5
@@ -2851,9 +2852,7 @@ software-defined radio receivers.")
            qtgamepad
            qtbase-5
            qtmultimedia-5
-           ;; TODO: Needs to be renamed to qtserialport-5. when version 6 is
-           ;; packed.
-           qtserialport
+           qtserialport-5
            rtaudio))
     (home-page "https://wfview.org/")
     (synopsis "Software to control Icom radios")
@@ -3060,8 +3059,7 @@ Radios.")
         (base32 "0kxn98vmrsd2a157cf3hsmivi6p4k4a3907j5w8hmcs0nn92786i"))))
     (build-system cmake-build-system)
     (native-inputs
-     `(("gfortran" ,gfortran)
-       ("googletest-source" ,(package-source googletest))
+     `(("googletest-source" ,(package-source googletest))
        ("orc" ,orc)
        ("pkg-config" ,pkg-config)
        ("python" ,python)
@@ -3075,7 +3073,6 @@ Radios.")
            gmp
            gnuradio
            gr-osmosdr
-           lapack
            libpcap
            log4cpp
            matio
@@ -3089,6 +3086,7 @@ Radios.")
      `(#:configure-flags
        (list "-DENABLE_GENERIC_ARCH=ON"
              "-DENABLE_OSMOSDR=ON"
+             "-DBLA_VENDOR=OpenBLAS"
              (string-append "-DGFLAGS_ROOT="
                             (assoc-ref %build-inputs "gflags"))
              (string-append "-DGLOG_ROOT="
@@ -3222,7 +3220,7 @@ memory contents between them.")
                    (substitute* "lib/CMakeLists.txt"
                      (("(DESTINATION \")/etc/udev/" _ directive)
                       (string-append directive #$output "/lib/udev/"))))))))
-    (inputs (list libusb qtbase-5 qtlocation qtserialport yaml-cpp))
+    (inputs (list libusb qtbase-5 qtlocation qtserialport-5 yaml-cpp))
     (native-inputs (list qttools-5))
     (home-page "https://dm3mat.darc.de/qdmr/")
     (synopsis "GUI application and command line tool to program DMR radios")

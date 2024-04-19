@@ -6,7 +6,7 @@
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2016, 2018 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2016 Jochem Raat <jchmrt@riseup.net>
-;;; Copyright © 2016-2022 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016-2022, 2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Alex Sassmannshausen <alex@pompo.co>
 ;;; Copyright © 2016, 2018, 2020, 2021 Roel Janssen <roel@gnu.org>
@@ -37,6 +37,7 @@
 ;;; Copyright © 2023 Mădălin Ionel Patrașcu <madalinionel.patrascu@mdc-berlin.de>
 ;;; Copyright © 2023 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2023 Jake Leporte <jakeleporte@outlook.com>
+;;; Copyright © 2023 Nicolas Graves <ngraves@ngraves.fr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -5549,6 +5550,25 @@ Hook::LexWrap implements wrappers in such a way that the standard
 caller function works correctly within the wrapped subroutine.")
     (license license:perl-license)))
 
+(define-public perl-image-size
+  (package
+    (name "perl-image-size")
+    (version "3.300")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (string-append "mirror://cpan/authors/id/R/RJ/RJRAY/Image-Size-"
+                           version ".tar.gz"))
+       (sha256
+        (base32 "0sq2kwdph55h4adx50fmy86brjkkv8grsw33xrhf1k9icpwb3jak"))))
+    (build-system perl-build-system)
+    (native-inputs (list perl-module-build))
+    (home-page "https://metacpan.org/release/Image-Size")
+    (synopsis "Extract height/width from images")
+    (description "This package provides a simple Perl library to extract
+height/width from images.")
+    (license license:perl-license)))
+
 (define-public perl-importer
   (package
     (name "perl-importer")
@@ -8074,16 +8094,31 @@ of data.")
 (define-public perl-mozilla-ca
   (package
     (name "perl-mozilla-ca")
-    (version "20200520")
+    (version "20240313")
     (source
      (origin
        (method url-fetch)
-       (uri (string-append "mirror://cpan/authors/id/A/AB/ABH/Mozilla-CA-"
+       (uri (string-append "mirror://cpan/authors/id/L/LW/LWP/Mozilla-CA-"
                            version ".tar.gz"))
        (sha256
         (base32
-         "09n7hwrh63c5gqvygqvvgvklcbvsm7g0p4nmq0b4mwhb64101jmk"))))
+         "1rwq2qb8f101ihq5gmdmr9vsnx7ybnln85489y4k761hks9p6j32"))
+       (snippet
+        #~(begin (use-modules (guix build utils))
+                 (delete-file "lib/Mozilla/CA/cacert.pem")
+                 (substitute* "lib/Mozilla/CA.pm"
+                   (("my \\$file.*") "my $file = $ENV{SSL_CERT_FILE};\n")
+                   (("return.*")
+                    (string-append
+                      "if (!File::Spec->file_name_is_absolute($file)) {\n"
+                      "        $file = \"/etc/ssl/certs/ca-certificates.crt\";\n"
+                      "    }\n"
+                      "    return $file;\n"))
+                   (("provides a copy of.*")
+                    "provides a link to the user's or the system's SSL\n"))))))
     (build-system perl-build-system)
+    (arguments
+     (list #:tests? #f))        ; Tests rely on embedded cacert.pem.
     (home-page "https://metacpan.org/release/Mozilla-CA")
     (synopsis "Mozilla's CA cert bundle in PEM format")
     (description "@code{Mozilla::CA} provides a copy of Mozilla's bundle of

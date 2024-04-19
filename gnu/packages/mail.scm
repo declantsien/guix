@@ -54,6 +54,7 @@
 ;;; Copyright © 2023 Timo Wilken <guix@twilken.net>
 ;;; Copyright © 2023 Arjan Adriaanse <arjan@adriaan.se>
 ;;; Copyright © 2023 Wilko Meyer <w@wmeyer.eu>
+;;; Copyright © 2024 Benjamin Slade <slade@lambda-y.net>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -112,6 +113,7 @@
   #:use-module (gnu packages golang-check)
   #:use-module (gnu packages golang-crypto)
   #:use-module (gnu packages golang-web)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages groff)
   #:use-module (gnu packages gsasl)
   #:use-module (gnu packages gtk)
@@ -607,7 +609,7 @@ aliasing facilities to work just as they would on normal mail.")
 (define-public mutt
   (package
     (name "mutt")
-    (version "2.2.12")
+    (version "2.2.13")
     (source (origin
              (method url-fetch)
              (uri (list
@@ -617,7 +619,7 @@ aliasing facilities to work just as they would on normal mail.")
                                    version ".tar.gz")))
              (sha256
               (base32
-               "0f6f32xlfp36axj5in8b0fcc9m05la27zxqbzpvmd3jbyq9g6fh4"))
+               "1ywfql0l0ykrwbd6ynxdclvxk6ll62gllfizd5kxi5ycq7fzl8zb"))
              (patches (search-patches "mutt-store-references.patch"))))
     (build-system gnu-build-system)
     (inputs
@@ -1171,17 +1173,17 @@ repository and Maildir/IMAP as LOCAL repository.")
            "0xazygwdc328m5l31rxjazq9giv2xrygp2p2q455lf3jhdxwq1km"))))
       (build-system gnu-build-system)
       (arguments
-       (let ((elisp-dir #~(string-append #$output "/share/emacs/site-lisp"))
-             (icon-dir  #~(string-append #$output "/share/mew")))
+       (let ((icon-dir  #~(string-append #$output "/share/mew")))
          (list
           #:modules '((guix build gnu-build-system)
                       (guix build utils)
+                      ((guix build emacs-build-system) #:prefix emacs:)
                       (guix build emacs-utils))
-          #:imported-modules `(,@%default-gnu-imported-modules
-                               (guix build emacs-utils))
+          #:imported-modules %emacs-build-system-modules
           #:tests? #f
           #:configure-flags
-          #~(list (string-append "--with-elispdir=" #$elisp-dir)
+          #~(list (string-append "--with-elispdir="
+                                 (emacs:elpa-directory #$output))
                   (string-append "--with-etcdir=" #$icon-dir))
           #:phases
           #~(modify-phases %standard-phases
@@ -1192,9 +1194,15 @@ repository and Maildir/IMAP as LOCAL repository.")
                      `(progn
                        (add-to-list 'image-load-path 'mew-icon-directory)
                        ,#$icon-dir)))))
-              (add-after 'install 'generate-autoloads
+              (add-after 'unpack 'generate-autoloads
                 (lambda _
-                  (emacs-generate-autoloads "mew" #$elisp-dir)))))))
+                  (emacs-generate-autoloads "mew" "elisp")
+                  (substitute* "elisp/mew-autoloads.el"
+                    ((";; no-byte-compile.*") ""))
+                  ;; Add generated autoloads to Makefile, so they get compiled
+                  (substitute* "elisp/Makefile"
+                    (("OBJS =") "OBJS = mew-autoloads.elc")
+                    (("SRCS =") "SRCS = mew-autoloads.el"))))))))
       (native-inputs
        (list emacs))
       (propagated-inputs
@@ -1210,14 +1218,14 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
 (define-public mu
   (package
     (name "mu")
-    (version "1.10.8")
+    (version "1.12.2")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/djcb/mu/releases/download/v"
                            version "/mu-" version ".tar.xz"))
        (sha256
-        (base32 "129m6rz8vbd7370c3h3ma66bxqdkm6wsdix5qkmv1vm7sanxh4bb"))))
+        (base32 "065nqrsz5bpvhniaacfq67fh78m5pm96svingdviw2hj1y21s6kv"))))
     (build-system meson-build-system)
     (native-inputs
      (list pkg-config
@@ -1225,7 +1233,7 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
            gnupg                        ; for tests
            texinfo))
     (inputs
-     (list glib gmime guile-3.0 xapian))
+     (list glib gmime guile-3.0 xapian readline python))
     (arguments
      (list
       #:modules '((guix build meson-build-system)
@@ -1240,13 +1248,13 @@ security functionality including PGP, S/MIME, SSH, and SSL.")
           (add-after 'unpack 'patch-bin-references
             (lambda _
               (substitute* '("guile/tests/test-mu-guile.cc"
-                             "mu/tests/test-mu-cmd.cc"
-                             "mu/tests/test-mu-cmd-cfind.cc"
                              "mu/tests/test-mu-query.cc")
                 (("/bin/sh") (which "sh")))
               (substitute* '("lib/tests/bench-indexer.cc"
                              "lib/utils/mu-test-utils.cc")
-                (("/bin/rm") (which "rm")))))
+                (("/bin/rm") (which "rm")))
+              (substitute* '("lib/mu-maildir.cc")
+                (("/bin/mv") (which "mv")))))
           (add-after 'install 'fix-ffi
             (lambda _
               (substitute* (find-files #$output "mu.scm")
@@ -4786,14 +4794,12 @@ ex-like commands on it.")
                (for-each (lambda (file)
                            (install-file file (string-append out "/bin")))
                          (list "mailfilter.crm" "mailreaver.crm" "mailtrainer.crm")))))
+         ;; Run phases from the emacs build system.
+         (add-after 'unpack 'make-autoloads
+           (assoc-ref emacs:%standard-phases 'make-autoloads))
          (add-after 'install 'install-emacs-mode
            (assoc-ref emacs:%standard-phases 'install))
-         ;; Run phases from the emacs build system.
-         (add-after 'install-emacs-mode 'make-autoloads
-           (assoc-ref emacs:%standard-phases 'make-autoloads))
-         (add-after 'make-autoloads 'enable-autoloads-compilation
-           (assoc-ref emacs:%standard-phases 'enable-autoloads-compilation))
-         (add-after 'enable-autoloads-compilation 'emacs-build
+         (add-after 'install-emacs-mode 'emacs-build
            (assoc-ref emacs:%standard-phases 'build))
          (add-after 'emacs-build 'validate-compiled-autoloads
            (assoc-ref emacs:%standard-phases 'validate-compiled-autoloads)))))

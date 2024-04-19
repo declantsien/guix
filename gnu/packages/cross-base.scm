@@ -97,7 +97,18 @@
   (warning (G_ "'cross-binutils' must be used with keyword arguments~%"))
   (cross-binutils* target #:binutils binutils))
 
-(define* (cross-binutils* target #:key (binutils binutils))
+(define (cross-binutils-package target)
+  "Returns the default package to use for a cross-Binutils for TARGET."
+  (cond
+    ;; The xtensa-ath9k-elf target is used solely to build the firmware for
+    ;; ath9k devices, the patches to binutils have not been updated and
+    ;; only apply to binutils@2.33.
+    ((string=? target "xtensa-ath9k-elf") binutils-2.33)
+    (else binutils)))
+
+(define* (cross-binutils* target
+                          #:key
+                          (binutils (cross-binutils-package target)))
   "Return a cross-Binutils for TARGET using BINUTILS."
   (let ((binutils (package
                     (inherit binutils)
@@ -118,8 +129,8 @@
                         ;; target libs, not native libs, so this is safe.
                         #~(cons "--with-sysroot=/" #$flags)))))))
 
-    ;; For Xtensa, apply Qualcomm's patch.
-    (cross (cond ((string-prefix? "xtensa-" target)
+    ;; For xtensa-ath9k-elf, apply Qualcomm's patch.
+    (cross (cond ((string=? target "xtensa-ath9k-elf")
                   (package-with-patches binutils
                                         (search-patches
                                          "ath9k-htc-firmware-binutils.patch")))
@@ -249,7 +260,9 @@ base compiler and using LIBC (which may be either a libc package or #f.)"
          ;; Patch by Qualcomm needed to build the ath9k-htc firmware.
          (search-patches "ath9k-htc-firmware-gcc.patch"))
         ((target-mingw? target)
-         (append (search-patches "gcc-4.9.3-mingw-gthr-default.patch")
+         (append (if (not (version>=? (package-version xgcc) "13.0"))
+                     (search-patches "gcc-4.9.3-mingw-gthr-default.patch")
+                     '())
                  (if (version>=? (package-version xgcc) "7.0")
                      (search-patches "gcc-7-cross-mingw.patch")
                      '())))
@@ -318,6 +331,10 @@ target that libc."
         (append
          (origin-patches (package-source xgcc))
          (append (cond
+                  ((version>=? (package-version xgcc) "13.0")
+                   (search-patches "gcc-13-cross-system-header-dir.patch"
+                                   "gcc-12-cross-environment-variables.patch"
+                                   "gcc-cross-gxx-include-dir.patch"))
                   ((version>=? (package-version xgcc) "12.0")
                    (search-patches "gcc-12-cross-environment-variables.patch"
                                    "gcc-cross-gxx-include-dir.patch"))

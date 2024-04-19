@@ -58,6 +58,7 @@
   #:use-module (gnu packages bison)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages curl)
+  #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
   #:use-module (gnu packages fltk)
   #:use-module (gnu packages fontutils)
@@ -74,6 +75,7 @@
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages image)
   #:use-module (gnu packages imagemagick)
+  #:use-module (gnu packages javascript)
   #:use-module (gnu packages libevent)
   #:use-module (gnu packages libidn)
   #:use-module (gnu packages libunistring)
@@ -94,11 +96,14 @@
   #:use-module (gnu packages python-web)
   #:use-module (gnu packages python-xyz)
   #:use-module (gnu packages qt)
+  #:use-module (gnu packages readline)
   #:use-module (gnu packages sdl)
   #:use-module (gnu packages sqlite)
+  #:use-module (gnu packages suckless)
   #:use-module (gnu packages tcl)
   #:use-module (gnu packages text-editors)
   #:use-module (gnu packages tls)
+  #:use-module (gnu packages web)
   #:use-module (gnu packages webkit)
   #:use-module (gnu packages xorg))
 
@@ -141,7 +146,7 @@
        ("which" ,which))) ;for tests
     (inputs
      `(("adwaita-icon-theme" ,adwaita-icon-theme)
-       ("gcr" ,gcr)
+       ("gcr" ,gcr-3)
        ("glib" ,glib)
        ("glib-networking" ,glib-networking)
        ("gsettings-desktop-schemas" ,gsettings-desktop-schemas)
@@ -589,7 +594,7 @@ driven and does not detract you from your daily work.")
 (define-public nyxt
   (package
     (name "nyxt")
-    (version "3.11.5")
+    (version "3.11.6")
     (source
      (origin
        (method git-fetch)
@@ -598,7 +603,7 @@ driven and does not detract you from your daily work.")
              (commit version)))
        (sha256
         (base32
-         "1f7pvh5bzkasbcfydd82pg7qn987ysbxk3j58dxzq2nzi05s0y4p"))
+         "0q7kf1a42gfvgv54hwhgiyvnsi6qhjdl1k88c3wxr1bj4ffhpvm3"))
        (file-name (git-file-name name version))))
     (build-system gnu-build-system)
     (arguments
@@ -947,21 +952,21 @@ with a terminal interface, for Gemini also a GUI is available.")
 (define-public telescope
   (package
     (name "telescope")
-    (version "0.8.1")
+    (version "0.9")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://github.com/omar-polo/telescope/releases/download/"
                            version "/telescope-" version ".tar.gz"))
        (sha256
-        (base32 "1fblm3mjddhjmcj1c065n9440n72ld037bdjdlyk1fpwd240m1pa"))))
+        (base32 "1xbwdm3xcahwl6sjqx6f8hhx7nyzyygkjsnxglwxazp8zlmchqy9"))))
     (build-system gnu-build-system)
     (arguments
      `(#:tests? #f))                    ;no tests
     (native-inputs
      (list gettext-minimal pkg-config))
     (inputs
-     (list libevent libressl ncurses))
+     (list libgrapheme libressl ncurses))
     (home-page "https://telescope.omarpolo.com/")
     (synopsis "Gemini client with a terminal interface")
     (description "Telescope is a w3m-like browser for Gemini.")
@@ -1022,3 +1027,58 @@ Features include
 @item Support for any character encoding recognised by Python.
 @end itemize")
     (license license:bsd-2)))
+
+(define-public edbrowse
+  (package
+    (name "edbrowse")
+    (version "3.8.9")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/CMB/edbrowse.git")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0hxvdvplmbnn0jzw4ls8a03k2s7qdylghln74910yljzjf392mld"))))
+    (build-system gnu-build-system)
+    (inputs (list curl-ssh pcre2 quickjs openssl readline-7 tidy-html
+                  unixodbc))
+    (native-inputs (list perl pkg-config))
+    (arguments
+     (list
+      #:make-flags
+      #~(list (string-append "CC=" #$(cc-for-target))
+              (string-append "QUICKJS_LIB="
+                             (assoc-ref %build-inputs "quickjs")
+                             "/lib/quickjs"))
+      #:tests? #f ; Edbrowse doesn't have tests
+      #:phases
+      #~(modify-phases %standard-phases
+          (delete 'configure)
+          (add-after 'unpack 'patch
+            (lambda _
+              (for-each
+               (lambda (file)
+                 (substitute* file
+                   (("\"quickjs-libc.h\"") "<quickjs/quickjs-libc.h>")))
+               '("src/js_hello_quick.c" "src/jseng-quick.c"))))
+          (replace 'install
+            (lambda* (#:key outputs #:allow-other-keys)
+              (let* ((out (assoc-ref outputs "out"))
+                     (bin (string-append out "/bin"))
+                     (doc (string-append out "/share/doc/" #$name "-" #$version)))
+                (mkdir-p doc)
+                (install-file "doc/usersguide.html" doc)
+                (install-file "src/edbrowse" bin)))))))
+    (home-page "https://edbrowse.org/")
+    (synopsis "Command-line editor and web browser")
+    (description "Edbrowse is a combination editor, browser, and mail client that is
+100% text based.  The interface is similar to /bin/ed, though there are many more
+features, such as editing multiple files simultaneously, and rendering html.  This
+program was originally written for blind users, but many sighted users have taken
+advantage of the unique scripting capabilities of this program, which can be found
+nowhere else.  A batch job, or cron job, can access web pages on the internet, submit
+forms, and send email, with no human intervention whatsoever.  edbrowse can also tap
+into databases through odbc.  It was primarily written by Karl Dahlke.")
+    (license license:gpl2+)))

@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013-2022 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013-2022, 2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2015, 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016 Chris Marusich <cmmarusich@gmail.com>
@@ -50,6 +50,7 @@
   #:use-module (gnu packages admin)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
+  #:use-module ((gnu packages certs) #:select (nss-certs))
   #:use-module (gnu packages compression)
   #:use-module (gnu packages cross-base)
   #:use-module (gnu packages firmware)
@@ -294,7 +295,8 @@ VERSION is the target version of the boot-parameters record."
                                 this-operating-system)))
   (services operating-system-user-services        ; list of services
             (thunked)                     ;allow for system-dependent services
-            (default %base-services))
+            (default %base-services)
+            (sanitize validate-service-list))
 
   (pam-services operating-system-pam-services     ; list of PAM services
                 (default (base-pam-services)))
@@ -876,7 +878,8 @@ of PROVENANCE-SERVICE-TYPE to its services."
 
 (define %base-firmware
   ;; Firmware usable by default.
-  (list ath9k-htc-firmware
+  (list ath9k-htc-ar7010-firmware
+        ath9k-htc-ar9271-firmware
         openfwwf-firmware))
 
 (define %base-packages-artwork
@@ -924,6 +927,7 @@ of PROVENANCE-SERVICE-TYPE to its services."
   (list inetutils isc-dhcp
         iproute
         wget
+	nss-certs
         ;; wireless-tools is deprecated in favor of iw, but it's still what
         ;; many people are familiar with, so keep it around.
         iw wireless-tools))

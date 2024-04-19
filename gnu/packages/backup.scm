@@ -41,22 +41,21 @@
 ;;; along with GNU Guix.  If not, see <http://www.gnu.org/licenses/>.
 
 (define-module (gnu packages backup)
-  #:use-module (guix gexp)
-  #:use-module (guix packages)
   #:use-module ((guix licenses) #:prefix license:)
-  #:use-module (guix gexp)
-  #:use-module (guix git-download)
-  #:use-module (guix download)
-  #:use-module (guix utils)
   #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system go)
   #:use-module (guix build-system python)
   #:use-module (guix build-system qt)
+  #:use-module (guix download)
+  #:use-module (guix gexp)
+  #:use-module (guix gexp)
+  #:use-module (guix git-download)
+  #:use-module (guix packages)
+  #:use-module (guix utils)
   #:use-module (gnu packages)
   #:use-module (gnu packages acl)
   #:use-module (gnu packages autotools)
-  #:use-module (gnu packages bash)
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages check)
@@ -64,9 +63,9 @@
   #:use-module (gnu packages crypto)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages datastructures)
-  #:use-module (gnu packages digest)
   #:use-module (gnu packages dbm)
   #:use-module (gnu packages dejagnu)
+  #:use-module (gnu packages digest)
   #:use-module (gnu packages ftp)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages glib)
@@ -122,6 +121,7 @@
     (build-system python-build-system)
     (native-inputs
      (list gettext-minimal ; for msgfmt
+           gobject-introspection
            util-linux ; setsid command, for the tests
            par2cmdline
            python-fasteners
@@ -136,7 +136,8 @@
     (propagated-inputs
      (list python-lockfile python-pygobject python-urllib3))
     (inputs
-     (list dbus ; dbus-launch (Gio backend)
+     (list bash-minimal ; to run the wrapped program
+           dbus ; dbus-launch (Gio backend)
            librsync
            lftp
            gnupg ; gpg executable needed
@@ -176,7 +177,12 @@
                                                    "share/zoneinfo"))
                    ;; Some things respect TMPDIR, others hard-code /tmp, and the
                    ;; defaults don't match up, breaking test_restart.  Fix it.
-                   (setenv "TMPDIR" "/tmp"))))))
+                   (setenv "TMPDIR" "/tmp")))
+               (add-after 'wrap 'gi-wrap
+                 (lambda _
+                   (let ((prog (string-append #$output "/bin/duplicity")))
+                     (wrap-program prog
+                       `("GI_TYPELIB_PATH" = (,(getenv "GI_TYPELIB_PATH"))))))))))
     (home-page "https://duplicity.gitlab.io/duplicity-web/")
     (synopsis "Encrypted backup using rsync algorithm")
     (description
@@ -253,6 +259,7 @@ backups (called chunks) to allow easy burning to CD/DVD.")
 (define-public libarchive
   (package
     (name "libarchive")
+    (replacement libarchive/fixed)
     (version "3.6.1")
     (source
      (origin
@@ -340,6 +347,25 @@ archive.  In particular, note that there is currently no built-in support for
 random access nor for in-place modification.  This package provides the
 @command{bsdcat}, @command{bsdcpio} and @command{bsdtar} commands.")
     (license license:bsd-2)))
+
+(define-public libarchive/fixed
+ (hidden-package
+  (package
+    (inherit libarchive)
+    (version "3.6.1")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (list (string-append "https://libarchive.org/downloads/libarchive-"
+                                 version ".tar.xz")
+                  (string-append "https://github.com/libarchive/libarchive"
+                                 "/releases/download/v" version "/libarchive-"
+                                 version ".tar.xz")))
+       (patches (search-patches "libarchive-remove-potential-backdoor.patch"))
+       (sha256
+        (base32
+         "1rj8q5v26lxxr8x4b4nqbrj7p06qvl91hb8cdxi3xx3qp771lhas")))))))
+
 
 (define-public rdup
   (package
@@ -649,13 +675,13 @@ detection, and lossless compression.")
 (define-public borg
   (package
     (name "borg")
-    (version "1.2.7")
+    (version "1.2.8")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "borgbackup" version))
        (sha256
-        (base32 "06j1v4bw9jkjh6m29ns5sigmp0cslcf0cyy8rrqij11w72ijhgzn"))
+        (base32 "1aplj54x6hcyg3mnzscnwi07npy7nrws2246ss25ax6bsaq257fk"))
        (modules '((guix build utils)))
        (snippet
         #~(begin
@@ -697,18 +723,10 @@ detection, and lossless compression.")
                 (setenv "BORG_OPENSSL_PREFIX" openssl)
                 (setenv "BORG_LIBLZ4_PREFIX" lz4)
                 (setenv "BORG_LIBXXHASH_PREFIX" xxhash)
-                (setenv "BORG_LIBZSTD_PREFIX" zstd)
-                (setenv "PYTHON_EGG_CACHE" "/tmp")
-                ;; The test 'test_return_codes[python]' fails when
-                ;; HOME=/homeless-shelter.
-                (setenv "HOME" "/tmp"))))
-          ;; The tests need to be run after Borg is installed.
-          (delete 'check)
-          (add-after 'install 'check
+                (setenv "BORG_LIBZSTD_PREFIX" zstd))))
+          (replace 'check
             (lambda* (#:key inputs outputs tests? #:allow-other-keys)
               (when tests?
-                ;; Make the installed package available for the test suite.
-                (add-installed-pythonpath inputs outputs)
                 ;; The tests should be run in an empty directory.
                 (mkdir-p "tests")
                 (with-directory-excursion "tests"
@@ -723,7 +741,6 @@ detection, and lossless compression.")
                            "and not test_access_acl "
                            "and not test_default_acl "
                            "and not test_get_item_uid_gid "
-                           "and not test_non_ascii_acl "
                            "and not test_create_content_from_command "
                            "and not test_create_content_from_command_with_failed_command "
                            "and not test_create_stdin "
@@ -1049,30 +1066,29 @@ precious backup space.
                 "1nvmxc9x0mlks6yfn66fmwn50k5q83ip4g9vvb0kndzd7hwcyacy"))))
     (build-system go-build-system)
     (arguments
-     '(#:import-path "github.com/restic/rest-server/cmd/rest-server"
-       #:unpack-path "github.com/restic/rest-server"
-       #:install-source? #f ;all we need is the binary
-       #:phases (modify-phases %standard-phases
-                  (replace 'check
-                    (lambda* (#:key tests? #:allow-other-keys . args)
-                      (when tests?
-                        ;; Unit tests seems to break with Guix' non-standard TMPDIR.
-                        (setenv "TMPDIR" "/tmp")
-                        (apply (assoc-ref %standard-phases
-                                          'check) args))))
-                  (add-after 'install 'rename-binary
-                    (lambda* (#:key outputs #:allow-other-keys)
-                      (with-directory-excursion (assoc-ref outputs "out")
-                        ;; "rest-server" is a bit too generic.
-                        (rename-file "bin/rest-server"
-                                     "bin/restic-rest-server")))))))
-    (propagated-inputs (list go-golang-org-x-crypto
-                             go-github-com-spf13-cobra
-                             go-github-com-prometheus-client-golang
-                             go-github-com-miolini-datacounter
-                             go-github-com-minio-sha256-simd
-                             go-github-com-gorilla-handlers
-                             go-github-com-coreos-go-systemd-activation))
+     (list
+      #:install-source? #f
+      #:import-path "github.com/restic/rest-server/cmd/rest-server"
+      #:unpack-path "github.com/restic/rest-server"
+      #:phases
+      #~(modify-phases %standard-phases
+          ;; Unit tests seems to break with Guix' non-standard TMPDIR.
+          (add-before 'check 'set-tmpdir
+            (lambda _
+              (setenv "TMPDIR" "/tmp")))
+          (add-after 'install 'rename-binary
+            (lambda _
+              (with-directory-excursion #$output
+                ;; "rest-server" is a bit too generic.
+                (rename-file "bin/rest-server"
+                             "bin/restic-rest-server")))))))
+    (native-inputs (list go-github-com-coreos-go-systemd-activation
+                         go-github-com-gorilla-handlers
+                         go-github-com-minio-sha256-simd
+                         go-github-com-miolini-datacounter
+                         go-github-com-prometheus-client-golang
+                         go-github-com-spf13-cobra
+                         go-golang-org-x-crypto))
     (home-page "https://github.com/restic/rest-server")
     (synopsis "Restic REST server")
     (description
@@ -1308,42 +1324,45 @@ compression parameters used by Gzip.")
 (define-public borgmatic
   (package
     (name "borgmatic")
-    (version "1.7.12")
+    (version "1.8.9")
     (source
      (origin
        (method url-fetch)
        (uri (pypi-uri "borgmatic" version))
        (sha256
-        (base32 "0720wvs3h2w8h28d7mpvjfp0q37dnrwf1y2ik3y4yr9csih7fmgh"))))
+        (base32 "1xmqv0gg2ic7lp5kmygr9f6qkabsr86mma7pigan12vk2bcdbw31"))))
     (build-system python-build-system)
     (arguments
-     (list #:phases
-           #~(modify-phases %standard-phases
-               (add-after 'unpack 'configure
-                 (lambda* (#:key inputs #:allow-other-keys)
-                   ;; Set absolute store path to borg.
-                   (substitute* "borgmatic/commands/borgmatic.py"
-                     (("\\.get\\('local_path', 'borg'\\)")
-                      (string-append ".get('local_path', '"
-                                     (search-input-file inputs "bin/borg")
-                                     "')")))
-                   (substitute* "tests/unit/commands/test_borgmatic.py"
-                     (("(module.get_local_path.+ == )'borg'" all start)
-                      (string-append start "'"
-                                     (search-input-file inputs "bin/borg")
-                                     "'")))))
-               (replace 'check
-                 (lambda* (#:key tests? #:allow-other-keys)
-                   (when tests?
-                     ;; Tests require the installed executable.
-                     (setenv "PATH" (string-append #$output "/bin"
-                                                   ":" (getenv "PATH")))
-                     (invoke "pytest")))))))
-    (inputs
-     (list borg python-colorama python-jsonschema python-requests
-           python-ruamel.yaml-0.16))
-    (native-inputs
-     (list python-flexmock python-pytest python-pytest-cov))
+     (list
+      #:phases #~(modify-phases %standard-phases
+                   (add-after 'unpack 'configure
+                     (lambda* (#:key inputs #:allow-other-keys)
+                       ;; Set absolute store path to borg.
+                       (substitute* "borgmatic/commands/borgmatic.py"
+                         (("\\.get\\('local_path', 'borg'\\)")
+                          (string-append ".get('local_path', '"
+                                         (search-input-file inputs "bin/borg")
+                                         "')")))
+                       (substitute* "tests/unit/commands/test_borgmatic.py"
+                         (("(module.get_local_path.+ == )'borg'" all start)
+                          (string-append start "'"
+                                         (search-input-file inputs "bin/borg")
+                                         "'")))))
+                   (replace 'check
+                     (lambda* (#:key tests? #:allow-other-keys)
+                       (when tests?
+                         ;; Tests require the installed executable.
+                         (setenv "PATH"
+                                 (string-append #$output "/bin" ":"
+                                                (getenv "PATH")))
+                         (invoke "pytest")))))))
+    (inputs (list borg
+                  python-apprise
+                  python-colorama
+                  python-jsonschema
+                  python-requests
+                  python-ruamel.yaml))
+    (native-inputs (list python-flexmock python-pytest python-pytest-cov))
     (home-page "https://torsion.org/borgmatic/")
     (synopsis "Simple, configuration-driven backup software")
     (description

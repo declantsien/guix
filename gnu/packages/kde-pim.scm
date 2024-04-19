@@ -36,6 +36,7 @@
   #:use-module (gnu packages cyrus-sasl)
   #:use-module (gnu packages databases)
   #:use-module (gnu packages documentation)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gnupg)
@@ -848,7 +849,7 @@ functions for accessing calendar data using the kcalcore API.")
            qtdeclarative-5
            qtkeychain
            qtnetworkauth-5
-           qtspeech
+           qtspeech-5
            qtwebchannel-5
            qtwebengine-5
            qtxmlpatterns))
@@ -1993,7 +1994,7 @@ unnecessary network operations.")
            kwidgetsaddons
            kxmlgui
            qtbase-5
-           qtspeech
+           qtspeech-5
            sonnet))
     (arguments
      `(#:tests? #f)) ;; TODO - test suite hangs

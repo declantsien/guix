@@ -115,7 +115,7 @@
   #:use-module (gnu packages gl)
   #:use-module (gnu packages gl)
   #:use-module (gnu packages glib)
-  #:use-module (gnu packages golang)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages gnome)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages guile)
@@ -141,7 +141,6 @@
   #:use-module (gnu packages python-check)
   #:use-module (gnu packages qt)
   #:use-module (gnu packages sphinx)
-  #:use-module (gnu packages syncthing)
   #:use-module (gnu packages tex)
   #:use-module (gnu packages texinfo)
   #:use-module (gnu packages tcl)
@@ -328,7 +327,7 @@ used to further tweak the behaviour of the different profiles.")
 (define-public bemenu
   (package
     (name "bemenu")
-    (version "0.6.19")
+    (version "0.6.21")
     (source
      (origin
        (method git-fetch)
@@ -337,7 +336,7 @@ used to further tweak the behaviour of the different profiles.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "19lqwzp9d471zkhk36d42jr0ywz9gqmksfqczlbafd80jlqnkg4k"))))
+        (base32 "1a97h711nbwi01a3vv2944m8gyzi04hgfpiizrzinx79n4vp1zhk"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -371,41 +370,41 @@ with X11 or Wayland, or in a text terminal with ncurses.")
                    license:lgpl3+))))   ; library and bindings
 
 (define-public copyq
-(package
-  (name "copyq")
-  (version "7.1.0")
-  (source (origin
-            (method git-fetch)
-            (uri (git-reference
-                   (url "https://github.com/hluk/CopyQ")
-                   (commit (string-append "v" version))))
-            (file-name (git-file-name name version))
-            (sha256
-             (base32
-              "1f39mh9qv1fa2vbwjigi1raz1pym2pz733j6b77r4588l8aaj2b8"))))
-  (build-system cmake-build-system)
-  (arguments
-   (list
-    #:configure-flags #~(list "-DCMAKE_BUILD_TYPE=Release")
-    #:tests? #f)) ; Test suite is a rather manual process.
-  (inputs
-   (list qtbase-5
-         qtscript
-         qtsvg-5
-         qtx11extras
-         qtdeclarative-5
-         qtwayland-5
-         wayland
-         knotifications))
-  (native-inputs
-   (list extra-cmake-modules qttools-5))
-  (synopsis "Clipboard manager with advanced features")
-  (description "CopyQ is clipboard manager with editing and scripting
+  (package
+    (name "copyq")
+    (version "8.0.0")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/hluk/CopyQ")
+                    (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "029s1pdp177fnrq5qrwjmd5pf1672l5jhq99is1lczrxi6bsf2qk"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list
+      #:configure-flags #~(list "-DCMAKE_BUILD_TYPE=Release")
+      #:tests? #f)) ; Test suite is a rather manual process.
+    (inputs
+     (list qtbase-5
+           qtscript
+           qtsvg-5
+           qtx11extras
+           qtdeclarative-5
+           qtwayland-5
+           wayland
+           knotifications))
+    (native-inputs
+     (list extra-cmake-modules qttools-5))
+    (synopsis "Clipboard manager with advanced features")
+    (description "CopyQ is clipboard manager with editing and scripting
 features.  CopyQ monitors system clipboard and saves its content in customized
 tabs.  Saved clipboard can be later copied and pasted directly into any
 application.")
-  (home-page "https://hluk.github.io/CopyQ/")
-  (license license:gpl3+)))
+    (home-page "https://hluk.github.io/CopyQ/")
+    (license license:gpl3+)))
 
 (define-public xkeysnail
   (package
@@ -755,7 +754,7 @@ rasterisation.")
 (define-public libdrm
   (package
     (name "libdrm")
-    (version "2.4.117")
+    (version "2.4.120")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -763,7 +762,7 @@ rasterisation.")
                     version ".tar.xz"))
               (sha256
                (base32
-                "0ar4c4ikcbm1s4sg09ld406izq5s1yk7b2n0mmvql77bwdlqv252"))))
+                "0yijzgg6rdsa68bz03sw0lcfa2nclv9m3as1cja50wkcyxim7x9v"))))
     (build-system meson-build-system)
     (arguments
      (list #:configure-flags
@@ -2952,7 +2951,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
 (define-public x-resize
   (package
     (name "x-resize")
-    (version "0.2")
+    (version "0.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2961,7 +2960,7 @@ can optionally use some appearance settings from XSettings, tint2 and GTK.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "10y2p55m5hbrma01kixsppq1a3ld0q1jk8hwx1d1jfgw9vd243j8"))))
+                "0bkzc57p8j7cfpcw36hp7bwn16mfby9p1kgfq1lijfqq7d56ps0x"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -3241,34 +3240,33 @@ After selection, the clip is put onto the PRIMARY and CLIPBOARD X selections.")
 (define-public clipman
   (package
     (name "clipman")
-    (version "1.6.1")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url (string-append "https://github.com/yory8/" name "/"))
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256 (base32
-                        "0b9kvj0dif4221dy6c1npknhhjxvbc4kygzhwxjirpwjws0yv6v9"))))
+    (version "1.6.2")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/chmouel/clipman")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "033l2hy46r2zjy8dllcmkjxidhnqac9kfh4wkq9hfvim9imp5a4m"))))
     (build-system go-build-system)
     (arguments
-     (list #:import-path "github.com/yory8/clipman"
-           #:install-source? #f
-           #:phases #~(modify-phases %standard-phases
-                        (add-before 'build 'patch
-                          (lambda _
-                            (substitute* "src/github.com/yory8/clipman/main.go"
-                              (("gopkg.in/alecthomas/kingpin.v2")
-                               "github.com/alecthomas/kingpin")
-                              (("\"wl-copy\"")
-                               (string-append "\"" (which "wl-copy") "\"")))))
-                        (delete 'install-license-files))))
-    (native-inputs (list go-github-com-alecthomas-template
-                         go-github-com-alecthomas-units))
-    (inputs (list go-github-com-kballard-go-shellquote
-                  go-github-com-alecthomas-kingpin
-                  libnotify
-                  wl-clipboard))
+     (list
+      #:import-path "github.com/yory8/clipman"
+      #:install-source? #f
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-before 'build 'patch-wl-copy-path
+            (lambda _
+              (substitute* "src/github.com/yory8/clipman/main.go"
+                (("\"wl-copy\"")
+                 (string-append "\"" (which "wl-copy") "\""))))))))
+    (inputs
+     (list go-github-com-kballard-go-shellquote
+           go-gopkg-in-alecthomas-kingpin-v2
+           libnotify
+           wl-clipboard))
     (synopsis "Basic clipboard manager with support for persisting copy buffers")
     (description
      "A clipboard manager for Wayland that relies on an external selector,
@@ -3278,7 +3276,7 @@ Run the binary in your session by adding @command{exec wl-paste -t text --watch
 clipman store} (or @command{exec wl-paste -t text --watch clipman store 1>>
 PATH/TO/LOGFILE 2>&1 &} to log errors) at the beginning of wherever you
 initialize programs.")
-    (home-page "https://github.com/yory8/clipman")
+    (home-page "https://github.com/chmouel/clipman")
     (license license:gpl3)))
 
 (define-public kbdd

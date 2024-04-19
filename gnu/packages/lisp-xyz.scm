@@ -858,21 +858,21 @@ instead of symbols.")
   (sbcl-package->ecl-package sbcl-list-named-class))
 
 (define-public sbcl-golden-utils
-  (let ((commit "fe1898f9abbd302b0359f017637c063173cf73e1")
-        (revision "3"))
+  (let ((commit "e43914ad2bdb0c8e1b1f10ef591aafc3c55b89e7")
+        (revision "4"))
     (package
       (name "sbcl-golden-utils")
       (version (git-version "0.0.0" revision commit))
-      (home-page "https://github.com/mfiano/mfiano-utils")
+      (home-page "https://github.com/lisp-mirror/golden-utils")
       (source
        (origin
          (method git-fetch)
          (uri (git-reference
                (url home-page)
                (commit commit)))
-         (file-name (git-file-name "golden-utils" version))
+         (file-name (git-file-name "cl-golden-utils" version))
          (sha256
-          (base32 "1ljc8yj32lmd1d60446rzl9m0r1ar15gdzacsf6blw1kny8xlrsr"))))
+          (base32 "09vq29wjr3x7h3fshwxg8h1psy4p73yl61cjljarpqjhsgz7lmbp"))))
       (build-system asdf-build-system/sbcl)
       (inputs
        (list sbcl-alexandria))
@@ -2551,6 +2551,40 @@ It is similar to the @code{CL:LOOP} macro, with these distinguishing marks:
 
 (define-public ecl-iterate
   (sbcl-package->ecl-package sbcl-iterate))
+
+(define-public sbcl-charje.loop
+  (package
+    (name "sbcl-charje.loop")
+    (version "0.0.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://git.sr.ht/~charje/loop")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name "cl-charje.loop" version))
+       (sha256
+        (base32
+         "1x1hw5xmrx9xmfzga8y0yi6s27r7zc80rwl2z7l4d2h24ykscvd4"))))
+    (build-system asdf-build-system/sbcl)
+    (inputs
+     (list sbcl-alexandria
+           sbcl-binding-arrows
+           sbcl-parse-declarations))
+    (home-page "https://git.sr.ht/~charje/loop")
+    (synopsis "Loop abstraction for Common Lisp that is consistent for
+different kinds of data")
+    (description "Loop is a joy to use and has a consistent interface unlike
+other looping abstractions and ANSI list operations.  You can define your own
+iterators and aggregators that integrate tightly into other operations.  All
+operations are non-consing when possible.")
+    (license license:agpl3+)))
+
+(define-public cl-charje.loop
+  (sbcl-package->cl-source-package sbcl-charje.loop))
+
+(define-public ecl-charje.loop
+  (sbcl-package->ecl-package sbcl-charje.loop))
 
 (define-public sbcl-cl-uglify-js
   ;; There have been many bug fixes since the 2010 release.
@@ -5066,7 +5100,7 @@ as possible).")
 (define-public cl-json-pointer
   (sbcl-package->cl-source-package sbcl-cl-json-pointer))
 
-(define-public ecl-cl-json-poiniter
+(define-public ecl-cl-json-pointer
   (sbcl-package->ecl-package sbcl-cl-json-pointer))
 
 (define-public sbcl-unix-opts
@@ -12620,28 +12654,26 @@ be used with @code{cl-yacc}.")
   (sbcl-package->ecl-package sbcl-cl-lex))
 
 (define-public sbcl-cl-colors2
-  (let ((commit "7a1410765e5186625df19a875cebba685e9e51bd")
-        (revision "4"))
-    (package
-      (name "sbcl-cl-colors2")
-      (version (git-version "0.5.4" revision commit))
-      (source
-       (origin
-         (method git-fetch)
-         (uri (git-reference
-               (url "https://codeberg.org/cage/cl-colors2.git")
-               (commit commit)))
-         (file-name (git-file-name "cl-colors2" version))
-         (sha256
-          (base32 "1xk3wshp21v193wbj1gs0czxaci00wwm957vmqi2dvlv0wgb2hfr"))))
-      (build-system asdf-build-system/sbcl)
-      (native-inputs
-       (list sbcl-clunit2))
-      (inputs
-       (list sbcl-alexandria sbcl-cl-ppcre))
-      (synopsis "Color library for Common Lisp")
-      (description
-       "This is a very simple color library for Common Lisp, providing:
+  (package
+    (name "sbcl-cl-colors2")
+    (version "0.6.0")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://codeberg.org/cage/cl-colors2")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name "cl-colors2" version))
+       (sha256
+        (base32 "0vnvlq9xixs04768q7hapsi16cjp3ych6mypvs6chihd5dal4cnd"))))
+    (build-system asdf-build-system/sbcl)
+    (native-inputs
+     (list sbcl-clunit2))
+    (inputs
+     (list sbcl-alexandria sbcl-cl-ppcre sbcl-parse-number))
+    (synopsis "Color library for Common Lisp")
+    (description
+     "This is a very simple color library for Common Lisp, providing:
 
 @itemize
 @item Types for representing colors in HSV, HSL, and RGB spaces.
@@ -12649,8 +12681,8 @@ be used with @code{cl-yacc}.")
 @item Function printing colors to HEX, RGB, RGBA, and HSL.
 @item Predefined colors from X11, SVG, and GDK.
 @end itemize\n")
-      (home-page "https://codeberg.org/cage/cl-colors2")
-      (license license:boost1.0))))
+    (home-page "https://codeberg.org/cage/cl-colors2")
+    (license license:boost1.0)))
 
 (define-public cl-colors2
   (sbcl-package->cl-source-package sbcl-cl-colors2))
@@ -22778,8 +22810,8 @@ resolving the tension between granularity and concurrency.")
 
 (define-public sbcl-binding-arrows
   ;; Fork of sbcl-arrows that does not have a new tag.
-  (let ((commit "d19364ec8850880ed6e42078ccaa2ed9114dc83a")
-        (revision "1"))
+  (let ((commit "46bcba8bb1ff27cd5caab3bda36f000d0489a4f2")
+        (revision "2"))
     (package
      (name "sbcl-binding-arrows")
      (version (git-version "1.0.0" revision commit))
@@ -22789,9 +22821,9 @@ resolving the tension between granularity and concurrency.")
        (uri (git-reference
              (url "https://github.com/phoe/binding-arrows")
              (commit commit)))
-       (file-name (git-file-name name version))
+       (file-name (git-file-name "cl-binding-arrows" version))
        (sha256
-        (base32 "0hqikgzic7kjq2n1d924yldfm30qz67cmsk6gghi9cbmxkwdlwp8"))))
+        (base32 "0kzybw5qlb49czh9v2lnxniz9jzqx306a6lnarfv59x48a7cch22"))))
      (build-system asdf-build-system/sbcl)
      (native-inputs
       (list sbcl-hu.dwim.stefil))
@@ -25550,17 +25582,17 @@ Lisp, including:
                (substitute* "src/configuration.lisp"
                  (("\"libblas.so.3gf\"")
                   (string-append "\"" (assoc-ref inputs "lapack")
-                                 "/lib/libblas.so\""))
+                                 "/lib/libopenblas.so\""))
                  (("\"liblapack.so.3gf\"")
                   (string-append "\"" (assoc-ref inputs "lapack")
-                                 "/lib/liblapack.so\""))))))))
+                                 "/lib/libopenblas.so\""))))))))
       (inputs
        `(("anaphora" ,sbcl-anaphora)
          ("alexandria" ,sbcl-alexandria)
          ("cffi" ,sbcl-cffi)
          ("cl-num-utils" ,sbcl-cl-num-utils)
          ("cl-slice" ,sbcl-cl-slice)
-         ("lapack" ,lapack)
+         ("lapack" ,openblas)
          ("let-plus" ,sbcl-let-plus)))
       (native-inputs
        (list sbcl-clunit))

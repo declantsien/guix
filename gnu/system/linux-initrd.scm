@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013-2020, 2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2016 Jan Nieuwenhuizen <janneke@gnu.org>
 ;;; Copyright © 2017, 2019 Mathieu Othacehe <m.othacehe@gmail.com>
@@ -134,18 +134,23 @@ MODULES and taken from LINUX."
                          (guix build utils)
                          (rnrs io ports)
                          (srfi srfi-1)
-                         (srfi srfi-26))
+                         (srfi srfi-26)
+                         (ice-9 match))
 
             (define module-dir
               (string-append #$linux "/lib/modules"))
 
             (define builtin-modules
-              (call-with-input-file
-                  (first (find-files module-dir "modules.builtin$"))
-                (lambda (port)
-                  (map file-name->module-name
-                       (string-tokenize
-                        (get-string-all port))))))
+              (match (find-files module-dir (lambda (file stat)
+                                              (string=? (basename file)
+                                                        "modules.builtin")))
+                ((file . _)
+                 (call-with-input-file file
+                   (lambda (port)
+                     (map file-name->module-name
+                          (string-tokenize (get-string-all port))))))
+                (_
+                 '())))
 
             (define modules-to-lookup
               (lset-difference string=? '#$modules builtin-modules))
@@ -252,12 +257,10 @@ upon error."
                       (srfi srfi-1)           ;for lvm-device-mapping
                       (srfi srfi-26)
 
-                      ;; FIXME: The following modules are for
-                      ;; LUKS-DEVICE-MAPPING.  We should instead propagate
-                      ;; this info via gexps.
-                      ((gnu build file-systems)
-                       #:select (find-partition-by-luks-uuid))
-                      (rnrs bytevectors))
+                      ;; Load extra modules needed by the mapped device code.
+                      #$@(append-map (compose mapped-device-kind-modules
+                                              mapped-device-type)
+                                     mapped-devices))
 
          (with-output-to-port (%make-void-port "w")
            (lambda ()
@@ -363,7 +366,10 @@ FILE-SYSTEMS."
 
   `("ahci"                                  ;for SATA controllers
     "usb-storage" "uas"                     ;for the installation image etc.
-    "usbhid" "hid-generic" "hid-apple"      ;keyboards during early boot
+    "usbhid" "hid-generic"                  ;keyboards during early boot
+    ,@(if (target-riscv64? system)
+          '()
+          '("hid-apple"))
     "dm-crypt" "xts" "serpent_generic" "wp512" ;for encrypted root partitions
     "nls_iso8859-1"                            ;for `mkfs.fat`, et.al
     ,@(if (string-match "^(x86_64|i[3-6]86)-" system)

@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2017, 2020 Mathieu Othacehe <m.othacehe@gmail.com>
-;;; Copyright © 2018-2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2018-2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2021 Kyle Meyer <kyle@kyleam.com>
 ;;; Copyright © 2021 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2022 Maxime Devos <maximedevos@telenet.be>
@@ -27,14 +27,13 @@
   #:use-module (guix i18n)
   #:use-module (guix base32)
   #:use-module (guix cache)
-  #:use-module (gcrypt hash)
+  #:autoload   (gcrypt hash) (sha256)
   #:use-module ((guix build utils)
                 #:select (mkdir-p delete-file-recursively invoke/quiet))
   #:use-module (guix store)
   #:use-module (guix utils)
   #:use-module (guix records)
-  #:use-module ((guix build syscalls)
-                #:select (terminal-string-width))
+  #:autoload   (guix build syscalls) (terminal-string-width)
   #:use-module (guix gexp)
   #:autoload   (guix git-download)
   (git-reference-url git-reference-commit git-reference-recursive?)
@@ -59,6 +58,7 @@
             with-repository
             with-git-error-handling
             false-if-git-not-found
+            repository-info
             update-cached-checkout
             url+commit->name
             latest-repository-commit
@@ -66,6 +66,8 @@
             commit-relation
             commit-descendant?
             commit-id?
+            commit-short-id
+            tag->commit
 
             remote-refs
 
@@ -232,6 +234,22 @@ is a tag name.  This is based on a simple heuristic so use with care!"
   (and (= (string-length str) 40)
        (string-every char-set:hex-digit str)))
 
+(define commit-short-id
+  (compose (cut string-take <> 7) oid->string commit-id))
+
+(define (tag->commit repository tag)
+  "Resolve TAG in REPOSITORY and return the corresponding object, usually a
+commit."
+  (let* ((oid (reference-name->oid repository
+                                   (string-append "refs/tags/" tag)))
+         (obj (object-lookup repository oid)))
+    ;; OID may designate an "annotated tag" object or a "commit" object.
+    ;; Return the commit object in both cases.
+    (if (= OBJ-TAG (object-type obj))
+        (object-lookup repository
+                       (tag-target-id (tag-lookup repository oid)))
+        obj)))
+
 (define (resolve-reference repository ref)
   "Resolve the branch, commit or tag specified by REF, and return the
 corresponding Git object."
@@ -278,15 +296,7 @@ corresponding Git object."
                   ;; There's no such tag, so it must be a commit ID.
                   (resolve `(commit . ,str)))))))
       (('tag    . tag)
-       (let* ((oid (reference-name->oid repository
-                                        (string-append "refs/tags/" tag)))
-              (obj (object-lookup repository oid)))
-         ;; OID may designate an "annotated tag" object or a "commit" object.
-         ;; Return the commit object in both cases.
-         (if (= OBJ-TAG (object-type obj))
-             (object-lookup repository
-                            (tag-target-id (tag-lookup repository oid)))
-             obj))))))
+       (tag->commit repository tag)))))
 
 (define (switch-to-ref repository ref)
   "Switch to REPOSITORY's branch, commit or tag specified by REF.  Return the
@@ -329,6 +339,22 @@ dynamic extent of EXP."
       body ...)
     (lambda (key err)
       (report-git-error err))))
+
+(define (repository-info directory)
+  "Open the Git repository in DIRECTORY or one of its parent and return three
+values: the working directory of that repository, its checked out commit ID,
+and its checked out reference (such as a branch name).  Return #f (three
+values) if DIRECTORY does not hold a readable Git repository."
+  (catch 'git-error
+    (lambda ()
+      (with-repository (repository-discover directory) repository
+        (let* ((head   (repository-head repository))
+               (commit (oid->string (reference-target head))))
+          (values (repository-working-directory repository)
+                  commit
+                  (reference-shorthand head)))))
+    (lambda _
+      (values #f #f #f))))
 
 (define* (update-submodules repository
                             #:key (log-port (current-error-port))

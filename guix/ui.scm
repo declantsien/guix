@@ -47,13 +47,15 @@
   #:use-module (guix packages)
   #:use-module (guix profiles)
   #:use-module (guix derivations)
-  #:use-module (guix build-system)
+  #:autoload   (guix build-system) (build-system-name)
   #:use-module (guix serialization)
-  #:use-module ((guix licenses)
-                #:select (license? license-name license-uri))
-  #:use-module ((guix build syscalls)
-                #:select (free-disk-space terminal-columns terminal-rows
-                          with-file-lock/no-wait))
+  #:autoload   (guix licenses) (license?
+                                license-name
+                                license-uri)
+  #:autoload   (guix build syscalls) (free-disk-space
+                                      terminal-columns
+                                      terminal-rows
+                                      with-file-lock/no-wait)
   #:use-module ((guix build utils)
                 ;; XXX: All we need are the bindings related to
                 ;; '&invoke-error'.  However, to work around the bug described
@@ -1471,23 +1473,9 @@ converted to a space; sequences of more than one line break are preserved."
 ;;;
 
 (define %text-width
-  ;; '*line-width*' was introduced in Guile 2.2.7/3.0.1.  On older versions of
-  ;; Guile, monkey-patch 'wrap*' below.
-  (if (defined? '*line-width*)
-      (let ((parameter (fluid->parameter *line-width*)))
-        (parameter (terminal-columns))
-        parameter)
-      (make-parameter (terminal-columns))))
-
-(unless (defined? '*line-width*)                  ;Guile < 2.2.7
-  (set! (@@ (texinfo plain-text) wrap*)
-    ;; XXX: Monkey patch this private procedure to let 'package->recutils'
-    ;; parameterize the fill of description field correctly.
-    (lambda strings
-      (let ((indent (fluid-ref (@@ (texinfo plain-text) *indent*))))
-        (fill-string (string-concatenate strings)
-                     #:line-width (%text-width) #:initial-indent indent
-                     #:subsequent-indent indent)))))
+  ;; '*line-width*' was introduced in Guile 2.2.7/3.0.1.  Keep this alias for
+  ;; backward-compatibility and for convenience.
+  (fluid->parameter *line-width*))
 
 (define (texi->plain-text str)
   "Return a plain-text representation of texinfo fragment STR."
@@ -1533,7 +1521,7 @@ followed by \"+ \", which makes for a valid multi-line field value in the
                       '()
                       str)))
 
-(define* (package->recutils p port #:optional (width (%text-width))
+(define* (package->recutils p port #:optional (width (terminal-columns))
                             #:key
                             (hyperlinks? (supports-hyperlinks? port))
                             (extra-fields '())

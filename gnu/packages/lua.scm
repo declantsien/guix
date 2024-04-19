@@ -4,7 +4,7 @@
 ;;; Copyright © 2014 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2014 Andreas Enge <andreas@enge.fr>
 ;;; Copyright © 2016, 2017, 2020-2022 Efraim Flashner <efraim@flashner.co.il>
-;;; Copyright © 2016, 2019 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2016, 2019, 2024 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2016 doncatnip <gnopap@gmail.com>
 ;;; Copyright © 2016, 2017, 2019 Clément Lassieur <clement@lassieur.org>
 ;;; Copyright © 2016 José Miguel Sánchez García <jmi2k@openmailbox.org>
@@ -378,49 +378,55 @@ directory structure and file attributes.")
 (define (make-lua-ossl name lua)
   (package
     (name name)
-    (version "20170903")
+    (version "20220711")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://25thandclement.com/~william/"
-                                  "projects/releases/luaossl-" version ".tgz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/wahern/luaossl")
+                    (commit (string-append "rel-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "10392bvd0lzyibipblgiss09zlqh3a5zgqg1b9lgbybpqb9cv2k3"))))
+                "1a9pgmc6fbhgh1m9ksz9fq057yzz46npqgakcsy9vngg47xacfdb"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:make-flags
-       (let ((out (assoc-ref %outputs "out"))
-             (lua-api-version ,(version-major+minor (package-version lua))))
-         (list ,(string-append "CC=" (cc-for-target))
-               "CFLAGS='-D HAVE_SYS_SYSCTL_H=0'" ; sys/sysctl.h is deprecated
-               (string-append "prefix=" out)
-               (string-append "LUA_APIS=" lua-api-version)))
+     (list
+      #:make-flags
+      #~(let ((lua-api-version #$(version-major+minor (package-version lua))))
+          (list (string-append "CC=" #$(cc-for-target))
+                "CFLAGS='-D HAVE_SYS_SYSCTL_H=0'" ; sys/sysctl.h is deprecated
+                (string-append "prefix=" #$output)
+                (string-append "LUA_APIS=" lua-api-version)))
        #:phases
-       (modify-phases %standard-phases
-         (delete 'configure)
-         (delete 'check)
-         (add-after 'install 'check
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out"))
-                   (lua-version ,(version-major+minor (package-version lua))))
-               (setenv "LUA_CPATH"
-                       (string-append out "/lib/lua/" lua-version "/?.so;;"))
-               (setenv "LUA_PATH"
-                       (string-append out "/share/lua/" lua-version "/?.lua;;"))
-               (with-directory-excursion "regress"
-                 (for-each (lambda (f)
-                             (invoke "lua" f))
-                           (find-files "." "^[0-9].*\\.lua$"))))
-             #t)))))
+       #~(modify-phases %standard-phases
+           (delete 'configure)
+           (delete 'check)
+           (add-after 'install 'check
+             (lambda _
+               (let ((lua-version #$(version-major+minor (package-version lua))))
+                 (setenv "LUA_CPATH"
+                         (string-append #$output "/lib/lua/" lua-version "/?.so;;"))
+                 (setenv "LUA_PATH"
+                         (string-append #$output "/share/lua/" lua-version "/?.lua;;"))
+                 (with-directory-excursion "regress"
+                   (for-each (lambda (f)
+                               (unless (member f (list
+                                                  ;; This test is for luajit only
+                                                  "./104-interposition-discarded.lua"
+                                                  ;; needs cqueues, which needs ossl
+                                                  "./148-custom-extensions.lua"))
+                                 (invoke "lua" f)))
+                             (find-files "." "^[0-9].*\\.lua$")))))))))
     (inputs
      (list lua openssl))
     (home-page "https://25thandclement.com/~william/projects/luaossl.html")
     (synopsis "OpenSSL bindings for Lua")
     (description "The luaossl extension module for Lua provides comprehensive,
-low-level bindings to the OpenSSL library, including support for certificate and
-key management, key generation, signature verification, and deep bindings to the
-distinguished name, alternative name, and X.509v3 extension interfaces.  It also
-binds OpenSSL's bignum, message digest, HMAC, cipher, and CSPRNG interfaces.")
+low-level bindings to the OpenSSL library, including support for certificate
+and key management, key generation, signature verification, and deep bindings
+to the distinguished name, alternative name, and X.509v3 extension interfaces.
+It also binds OpenSSL's bignum, message digest, HMAC, cipher, and CSPRNG
+interfaces.")
     (license license:expat)))
 
 (define-public lua-ossl
@@ -482,86 +488,87 @@ secure session between the peers.")
 (define (make-lua-cqueues name lua lua-ossl)
   (package
     (name name)
-    (version "20171014")
+    (version "20200726")
     (source (origin
-              (method url-fetch)
-              (uri (string-append "https://25thandclement.com/~william/"
-                                  "projects/releases/cqueues-" version ".tgz"))
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/wahern/cqueues")
+                    (commit (string-append "rel-" version))))
+              (file-name (git-file-name name version))
               (sha256
                (base32
-                "1dabhpn6r0hlln8vx9hxm34pfcm46qzgpb2apmziwg5z51fi4ksb"))))
+                "17gwqndlga6gnishgs6wk8cvgwzanddr42yikkg2xd4nanhcg8z9"))))
     (build-system gnu-build-system)
     (arguments
-     `(#:modules ((guix build gnu-build-system)
+     (list
+      #:modules '((guix build gnu-build-system)
                   (guix build utils)
                   (ice-9 string-fun))
-       #:make-flags
-       (let ((out (assoc-ref %outputs "out"))
-             (lua-api-version ,(version-major+minor (package-version lua))))
-         (list ,(string-append "CC=" (cc-for-target))
-               (string-append "LUA_APIS=" lua-api-version)))
-       #:phases
-       (modify-phases %standard-phases
-         (delete 'configure)
-         (delete 'check)
-         (replace 'install
-           (lambda* (#:key make-flags outputs #:allow-other-keys)
-             (let ((out (assoc-ref outputs "out")))
-               (apply invoke "make" "install"
-                      (append make-flags
-                              (list (string-append "DESTDIR=" out)
-                                    "prefix="))))))
-         (add-after 'install 'check
-           (lambda* (#:key inputs outputs make-flags #:allow-other-keys)
-             (let*
-                 ((lua-version ,(version-major+minor (package-version lua)))
-                  (env-suffix (if (equal? lua-version "5.1")
-                                  ""
-                                  (string-append
-                                   "_"
-                                   (string-replace-substring lua-version "." "_"))))
+      #:make-flags
+      #~(let ((lua-api-version #$(version-major+minor (package-version lua))))
+          (list (string-append "CC=" #$(cc-for-target))
+                (string-append "LUA_APIS=" lua-api-version)))
+      #:phases
+      #~(modify-phases %standard-phases
+          (delete 'configure)
+          (delete 'check)
+          (replace 'install
+            (lambda* (#:key make-flags #:allow-other-keys)
+              (apply invoke "make" "install"
+                     (append make-flags
+                             (list (string-append "DESTDIR=" #$output)
+                                   "prefix=")))))
+          (add-after 'install 'check
+            (lambda* (#:key make-flags #:allow-other-keys)
+              (let*
+                  ((lua-version #$(version-major+minor (package-version lua)))
+                   (env-suffix (if (equal? lua-version "5.1")
+                                   ""
+                                   (string-append
+                                    "_"
+                                    (string-replace-substring lua-version "." "_"))))
 
-                  (lua-ossl (assoc-ref inputs "lua-ossl"))
-                  (out (assoc-ref outputs "out"))
+                   (lua-cpath (lambda (p)
+                                (string-append p "/lib/lua/" lua-version "/?.so")))
+                   (lua-path (lambda (p)
+                               (string-append p "/share/lua/" lua-version "/?.lua"))))
+                ;; The test suite sets Lua-version-specific search-path variables
+                ;; when available so we must do the same, as these take
+                ;; precedence over the generic "LUA_CPATH" and "LUA_PATH"
+                (setenv (string-append "LUA_CPATH" env-suffix)
+                        (string-append
+                         (string-join (map lua-cpath (list #$output #$lua-ossl)) ";")
+                         ";;"))
+                (setenv (string-append "LUA_PATH" env-suffix)
+                        (string-append
+                         (string-join (map lua-path (list #$output #$lua-ossl)) ";")
+                         ";;"))
 
-                  (lua-cpath (lambda (p)
-                               (string-append p "/lib/lua/" lua-version "/?.so")))
-                  (lua-path (lambda (p)
-                              (string-append p "/share/lua/" lua-version "/?.lua"))))
-               ;; The test suite sets Lua-version-specific search-path variables
-               ;; when available so we must do the same, as these take
-               ;; precedence over the generic "LUA_CPATH" and "LUA_PATH"
-               (setenv (string-append "LUA_CPATH" env-suffix)
-                       (string-append
-                        (string-join (map lua-cpath (list out lua-ossl)) ";")
-                        ";;"))
-               (setenv (string-append "LUA_PATH" env-suffix)
-                       (string-append
-                        (string-join (map lua-path (list out lua-ossl)) ";")
-                        ";;"))
+                ;; Skip regression tests we expect to fail
+                (with-directory-excursion "regress"
+                  (for-each (lambda (f)
+                              (rename-file f (string-append f ".skip")))
+                            (append
+                             ;; Regression tests that require network
+                             ;; connectivity
+                             '("22-client-dtls.lua"
+                               "30-starttls-completion.lua"
+                               "62-noname.lua"
+                               "153-dns-resolvers.lua")
 
-               ;; Skip regression tests we expect to fail
-               (with-directory-excursion "regress"
-                 (for-each (lambda (f)
-                             (rename-file f (string-append f ".skip")))
-                           (append
-                            ;; Regression tests that require network
-                            ;; connectivity
-                            '("22-client-dtls.lua"
-                              "30-starttls-completion.lua"
-                              "62-noname.lua"
-                              "153-dns-resolvers.lua")
+                             ;; Regression tests that require LuaJIT
+                             '("44-resolvers-gc.lua"
+                               "51-join-defunct-thread.lua"
+                               ;; These both need the ffi module.
+                               "73-starttls-buffering.lua"
+                               "87-alpn-disappears.lua")
 
-                            ;; Regression tests that require LuaJIT
-                            '("44-resolvers-gc.lua"
-                              "51-join-defunct-thread.lua")
+                             ;; Regression tests that require Lua 5.3
+                             (if (not (equal? lua-version "5.3"))
+                                 '("152-thread-integer-passing.lua")
+                                 '()))))
 
-                            ;; Regression tests that require Lua 5.3
-                            (if (not (equal? lua-version "5.3"))
-                                '("152-thread-integer-passing.lua")
-                                '()))))
-
-               (apply invoke "make" "check" make-flags)))))))
+                (apply invoke "make" "check" make-flags)))))))
     (native-inputs
      (list m4))
     (inputs

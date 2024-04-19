@@ -1,7 +1,7 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2019 L  p R n  d n <guix@lprndn.info>
 ;;; Copyright © 2021 Guillaume Le Vaillant <glv@posteo.net>
-;;; Copyright © 2023 Ahmad Draidi <a.r.draidi@redscript.org>
+;;; Copyright © 2023, 2024 Ahmad Draidi <a.r.draidi@redscript.org>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -20,6 +20,7 @@
 
 (define-module (gnu packages arcan)
   #:use-module (guix build-system cmake)
+  #:use-module (guix build-system copy)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system gnu)
   #:use-module (guix gexp)
@@ -27,8 +28,10 @@
   #:use-module ((guix licenses) #:prefix license:)
   #:use-module (guix packages)
   #:use-module (guix utils)
+  #:use-module (gnu packages)
   #:use-module (gnu packages audio)
   #:use-module (gnu packages autotools)
+  #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages compression)
   #:use-module (gnu packages databases)
@@ -61,7 +64,7 @@
 (define-public arcan
   (package
     (name "arcan")
-    (version "0.6.2.1")
+    (version "0.6.3")
     (source (origin
               (method git-fetch)
               (file-name (git-file-name name version))
@@ -70,7 +73,7 @@
                     (commit version)))
               (sha256
                (base32
-                "14wwb7mgq8ab39dfprps7hzdz7a37r3cl8dc5q6m1r8n5daxyzgc"))
+                "1aj8hffxsf6vg1al2v29cn35wnh7wir5x9krk4h68sy5va88w8k5"))
               (modules '((guix build utils)))
               (snippet
                ;; Remove some bundled packages.
@@ -171,7 +174,7 @@ engine with a Lua scripting interface.")
     (inputs
      (modify-inputs (package-inputs arcan)
        (delete "libdrm")
-       (prepend sdl)))
+       (prepend glu libglvnd mesa sdl)))
     (arguments
      `(,@(ensure-keyword-arguments
           (package-arguments arcan)
@@ -183,10 +186,78 @@ engine with a Lua scripting interface.")
               "-DSTATIC_FREETYPE=off" "-DSHMIF_TUI_ACCEL=on")))))
     (synopsis "Combined display server, multimedia framework and game engine (SDL)")))
 
+(define-public durden
+  ;; Match Arcan 0.6.3
+  (let ((commit "a8938b9c835f55bedc2c42aec4ddc5c9739eb949")
+        (revision "1"))
+    (package
+      (name "durden")
+      (version (git-version "0.6.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (file-name (git-file-name name version))
+         (uri (git-reference
+               (url "https://github.com/letoram/durden")
+               (commit commit)))
+         (sha256
+          (base32 "1ybi6x2kwn597kjqycrqmlvp6z79yv2jfwzgx937wcckm55xlpvk"))
+         (patches (search-patches "durden-shadow-arcan.patch"))))
+      (build-system copy-build-system)
+      (arguments
+       (list
+        #:install-plan #~'(("durden/" "share/arcan/appl/durden/")
+                           ("util/" "share/arcan/appl/durden/util/")
+                           ("distr/durden" "bin/durden"))
+        #:phases #~(modify-phases %standard-phases
+                     (add-after 'unpack 'patch-paths
+                       (lambda* (#:key inputs outputs #:allow-other-keys)
+                         (substitute* "distr/durden"
+                           (("/usr/share/\\$applname")
+                            (string-append (assoc-ref outputs "out")
+                                           "/share/arcan/appl"))
+                           (("@ARCAN_STORE_PATH@")
+                            (string-append (assoc-ref inputs "arcan")
+                                           "/bin/arcan"))
+                           (("([\\([:blank:]]+)basename " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/basename "))
+                           (("([\\([:blank:]]+)date " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/date "))
+                           (("([\\([:blank:]]+)ln " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/ln "))
+                           (("([\\([:blank:]]+)mkdir " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/mkdir "))
+                           (("([\\([:blank:]]+)true; " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/true; "))
+                           (("([\\([:blank:]]+)\\[ " _ separator)
+                            (string-append separator
+                                           (assoc-ref inputs "coreutils")
+                                           "/bin/[ "))))))))
+      (inputs (list arcan coreutils))
+      (home-page "https://durden.arcan-fe.com/")
+      (synopsis "Desktop Environment for Arcan")
+      (description
+       "Durden is a desktop environment for the Arcan Display Server.
+It serves both as a reference showcase on how to take advantage of some of the
+features in Arcan, and as an entry to the advanced-user side of the desktop
+environment spectrum.")
+      (license (list license:bsd-3 license:expat license:cc-by3.0
+                     license:cc-by4.0 license:asl2.0)))))
+
 (define-public xarcan
   (package
     (name "xarcan")
-    (version "0.6.1")
+    (version "0.6.3")
     (source
      (origin
        (method git-fetch)
@@ -195,7 +266,7 @@ engine with a Lua scripting interface.")
              (url "https://github.com/letoram/xarcan")
              (commit version)))
        (sha256
-        (base32 "1z4sf101i2y6rg2vcxfwmp1nkzfa3rw1pp48ym1ds1ka513vy128"))))
+        (base32 "1g24mmwnc45ig0x8jk0v91488k8933w07vxi4305sla56q4n82p4"))))
     (build-system meson-build-system)
     (arguments
      (list

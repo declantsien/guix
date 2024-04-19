@@ -5,7 +5,7 @@
 ;;; Copyright © 2015 xd1le <elisp.vim@gmail.com>
 ;;; Copyright © 2015 Paul van der Walt <paul@denknerd.org>
 ;;; Copyright © 2016 Danny Milosavljevic <dannym@scratchpost.org>
-;;; Copyright © 2016, 2019, 2020, 2023 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2019, 2020, 2023, 2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Al McElrath <hello@yrns.org>
 ;;; Copyright © 2016 Carlo Zancanaro <carlo@zancanaro.id.au>
 ;;; Copyright © 2016 2019, 2021-2022 Ludovic Courtès <ludo@gnu.org>
@@ -70,6 +70,7 @@
 ;;; Copyright © 2024 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2024 Ahmad Draidi <a.r.draidi@redscript.org>
 ;;; Copyright © 2024 chris <chris@bumblehead.com>
+;;; Copyright © 2024 Erik Eduardo Alonso Hernández <erik@erikeduardo.xyz>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -798,7 +799,7 @@ desktop environment.")
 (define-public icewm
   (package
     (name "icewm")
-    (version "3.4.5")
+    (version "3.4.7")
     (source (origin
               (method url-fetch)
               (uri (string-append
@@ -806,7 +807,7 @@ desktop environment.")
                     version "/icewm-" version ".tar.lz"))
               (sha256
                (base32
-                "1wd5k0whh2b43a72223cy19pwc29fhrhd2dnc61fha2y5ndgw6ld"))))
+                "0c1c9qwaq9kdlma5kfqzjzzm6wk3bww6b7mw4b3j76fn7ms4982s"))))
     (build-system gnu-build-system)
     (native-inputs (list pkg-config))
     (inputs (list fontconfig
@@ -831,13 +832,6 @@ desktop environment.")
     (arguments
      (list #:phases
            #~(modify-phases %standard-phases
-               (add-after 'unpack 'remove-gmo-files
-                 ;; gmo files are generated from .po files
-                 ;; so remove them before build to make sure
-                 ;; they are re-generated if needed
-                 (lambda _
-                   (for-each delete-file
-                             (find-files "po" "\\.gmo$"))))
                (add-after 'unpack 'skip-failing-test
                  ;; strtest.cc tests failing due to $HOME and /etc setup
                  ;; difference under guix
@@ -1390,6 +1384,41 @@ Keybinder works with GTK-based applications using the X Window System.")
 (define-public keybinder-3.0
   (deprecated-package "keybinder-3.0" keybinder))
 
+(define-public sandbar
+  (package
+    (name "sandbar")
+    (version "0.1")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/kolunmi/sandbar")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "0912cr2q2kg4nqdwy978kpmdcj2cjz3gnlcb28ny9z3cprxvyvxq"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+             (delete 'configure))       ;no configure script
+           #:tests? #f             ;no check target
+           #:make-flags
+           #~(list (string-append "CC=" #$(cc-for-target))
+                   (string-append "PREFIX=" #$output))))
+    (inputs (list fcft wayland))
+    (native-inputs (list pkg-config wayland-protocols))
+    (synopsis "DWM-like bar for the River Wayland compositor")
+    (description "Sandbar is a minimalist DWM-like bar designed for River,
+a Wayland compositor.  It is triggered through commands sent via standard
+input, providing extensive customization options.  This behavior allows users
+to dynamically adjust status text, visibility, and bar location, making
+Sandbar an ideal choice for those seeking a lightweight and hackable bar
+solution in their Wayland environment.")
+    ;;             LICENSE      LICENSE.dtao
+    (license (list license:gpl3 license:expat))
+    (home-page "https://github.com/kolunmi/sandbar")))
+
 (define-public spectrwm
   (package
     (name "spectrwm")
@@ -1504,7 +1533,7 @@ project derived from the original Calm Window Manager.")
 (define-public dunst
   (package
     (name "dunst")
-    (version "1.9.2")
+    (version "1.10.0")
     (source
      (origin
        (method git-fetch)
@@ -1513,7 +1542,7 @@ project derived from the original Calm Window Manager.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "17zrw7jrnlyln81pxw7p4jgvl7j1w1gf488nfskhns6j6dcz90gh"))))
+        (base32 "1d6mc3ac4z16iwgq9934g1yc3412xl0hwv5vs40ycfmasm8qbjga"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -1858,7 +1887,7 @@ narrow the items to those matching the tokens in the input.")
   (package
     (inherit sway)
     (name "swayfx")
-    (version "0.3.1")
+    (version "0.3.2")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -1867,8 +1896,20 @@ narrow the items to those matching the tokens in the input.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1550n9xnqbl1am4cwlnj8ip5cs7kgdzx96ga2hkcw29cpyian7rv"))))
+                "13d8icd45j937jgkidr7cyjys4nnvxh4ilp7ml0i2ml39ipv01qv"))))
     (build-system meson-build-system)
+    (inputs (list basu
+                  cairo
+                  gdk-pixbuf
+                  json-c
+                  libevdev
+                  libinput-minimal
+                  libxkbcommon
+                  pango
+                  pcre2
+                  swaybg
+                  wayland
+                  wlroots-0.16))
     (home-page "https://github.com/WillPower3309/swayfx")
     (synopsis "Sway Fork with extra options and effects")
     (description
@@ -2123,7 +2164,7 @@ compository, supporting the following featuers:
 (define-public waybar
   (package
     (name "waybar")
-    (version "0.9.20")
+    (version "0.10.0")
     (source
      (origin
        (method git-fetch)
@@ -2132,7 +2173,7 @@ compository, supporting the following featuers:
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "07h5l7h7wmzqgg7fbp98khrxg2sq2s4ncp4fiiz1yg62r752idy4"))))
+        (base32 "00a8npilvcvicn9mff00i5rdzdll0zrmq0y8wgr314gnljn52md7"))))
     (build-system meson-build-system)
     (arguments
      (list #:configure-flags #~(list "--wrap-mode=nodownload")))
@@ -2203,7 +2244,7 @@ core/thread.")
 (define-public wlr-randr
   (package
     (name "wlr-randr")
-    (version "0.4.0")
+    (version "0.4.1")
     (source
      (origin
        (method git-fetch)
@@ -2212,7 +2253,7 @@ core/thread.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "1f3dc2i6c1rn2adfcnqmh10570ps335188zllg66sv1d0l8mggry"))))
+        (base32 "1kl5awwclmlfcxfz0jp8gzpg2vffsl9chfilysfsv1mq11a96ifs"))))
     (build-system meson-build-system)
     (inputs (list wayland))
     (native-inputs (list pkg-config))
@@ -3201,7 +3242,7 @@ read and write, and compatible with JSON.")
 (define-public labwc
   (package
     (name "labwc")
-    (version "0.7.0")
+    (version "0.7.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -3210,7 +3251,7 @@ read and write, and compatible with JSON.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "17p3wcnggnd4v37z1dgv8nmc35nq4261s8sglr44bf71vjircggz"))))
+                "09j6p4p2c00rpcr65r6igj0llfablg5j2d1ys87kyh858dhajpza"))))
     (build-system meson-build-system)
     (native-inputs
      (list pkg-config gettext-minimal scdoc))

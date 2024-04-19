@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013-2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013-2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2015, 2017, 2020, 2021, 2022, 2023 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2017 Muriithi Frederick Muriuki <fredmanglis@gmail.com>
 ;;; Copyright © 2017, 2018 Oleg Pykhalov <go.wigust@gmail.com>
@@ -652,6 +652,18 @@ the Nix package manager.")
       (modify-inputs (package-propagated-inputs guix)
         (delete "guile-ssh"))))))
 
+(define-public (guix-for-channels channels)
+  "Return a package corresponding to CHANNELS."
+  (package
+    (inherit guix)
+    (source (find guix-channel? channels))
+    (build-system channel-build-system)
+    (arguments
+     `(#:channels ,(remove guix-channel? channels)))
+    (inputs '())
+    (native-inputs '())
+    (propagated-inputs '())))
+
 (define-public current-guix-package
   ;; This parameter allows callers to override the package that 'current-guix'
   ;; returns.  This is useful when 'current-guix' cannot compute it by itself,
@@ -890,14 +902,14 @@ sub-directory.")
 (define-public stow
   (package
     (name "stow")
-    (version "2.3.1")
+    (version "2.4.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://gnu/stow/stow-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "0jrxy12ywn7smdzdnvwzjw77l6knx6jkj2rckgykg1dpf6bdkm89"))))
+                "07bn3n5n8spl2vabgyl8db5dyp690qn3x92ij4ynvayyck7ngvbg"))))
     (build-system gnu-build-system)
     (inputs
      (list perl))
@@ -1389,6 +1401,8 @@ tools_locations = {
                          ;; https://github.com/conan-io/conan/issues/13577).
                          "and not test_other_client_can_link_autotools "
                          "and not test_autotools_lib_template "
+                         ;; Sometimes fail: https://github.com/conan-io/conan/issues/15936
+                         "and not test_basic_parallel_install "
                          (if (not (string-prefix? "x86_64" system))
                              ;; These tests either assume the machine is
                              ;; x86_64, or require a cross-compiler to target
@@ -1782,8 +1796,8 @@ in an isolated environment, in separate namespaces.")
     (license license:gpl3+)))
 
 (define-public nar-herder
-  (let ((commit "5ccd6cbbdf5fc41e43a491d3414c1663e1fba64d")
-        (revision "23"))
+  (let ((commit "ffda727a3b6bd45851662159709a1927a1ee0c1d")
+        (revision "27"))
     (package
       (name "nar-herder")
       (version (git-version "0" revision commit))
@@ -1794,7 +1808,7 @@ in an isolated environment, in separate namespaces.")
                       (commit commit)))
                 (sha256
                  (base32
-                  "1lid5k4wgghl9lzhazx1c473qv18yxp0xxrvj04b33pdvxnaawl8"))
+                  "1qg8s68prdv3qgwx63k4zfvsida64jq6fcl06zffbkbl672rnrzl"))
                 (file-name (string-append name "-" version "-checkout"))))
       (build-system gnu-build-system)
       (arguments

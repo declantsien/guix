@@ -3,7 +3,7 @@
 ;;; Copyright © 2014, 2017 Julien Lepiller <julien@lepiller.eu>
 ;;; Copyright © 2015 Taylan Ulrich Bayırlı/Kammer <taylanbayirli@gmail.com>
 ;;; Copyright © 2015 Andreas Enge <andreas@enge.fr>
-;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2021 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2015, 2016, 2017, 2018, 2019, 2021, 2024 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2015, 2018-2021, 2023 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016, 2017 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Andy Patterson <ajpatter@uwaterloo.ca>
@@ -89,6 +89,7 @@
   #:use-module (gnu packages gnupg)
   #:use-module (gnu packages golang)
   #:use-module (gnu packages golang-build)
+  #:use-module (gnu packages golang-xyz)
   #:use-module (gnu packages gperf)
   #:use-module (gnu packages graphviz)
   #:use-module (gnu packages gstreamer)
@@ -1584,8 +1585,8 @@ protocols.")
     (license license:x11)))
 
 (define (prosody-module module-name)
-  (let ((changeset "fba64b043c52")
-        (revision "2")
+  (let ((changeset "66e7d46b1d4b")
+        (revision "3")
         (package-name (string-append
                        "prosody-"
                        (string-replace-substring
@@ -1604,7 +1605,7 @@ protocols.")
                 (file-name (string-append name "-" version "-checkout"))
                 (sha256
                  (base32
-                  "1nvka8s3zqs97jqsknhp2q956rrdga1qaxa1y3i0h8zx3g9vgdch"))))
+                  "0wyxvbf335jaaz850m2q6jj6ix4hjlhlh28kzk7462qa9fcw5p7s"))))
       (build-system copy-build-system)
       (arguments
        `(#:install-plan '((,(string-append module-name "/") "."))))
@@ -1614,12 +1615,71 @@ protocols.")
       (description #f)
       (license (package-license prosody)))))
 
+(define-public prosody-cloud-notify
+  (package
+    (inherit (prosody-module "mod_cloud_notify"))
+    (synopsis "XEP-0357: Push Notifications")
+    (description "This module implements XEP-0357: Push Notifications.
+
+Some platforms, notably Apple’s iOS and many versions of Android, impose
+limits that prevent applications from running or accessing the network in the
+background.  This makes it difficult or impossible for an XMPP application to
+remain reliably connected to a server to receive messages.
+
+In order for messaging and other apps to receive notifications, the OS vendors
+run proprietary servers that their OS maintains a permanent connection to in
+the background.  Then they provide APIs to application developers that allow
+sending notifications to specific devices via those servers.
+
+When you connect to your server with a client that requires push
+notifications, it will use this module to set up a “push registration”.  When
+you receive a message but your device is not connected to the server, this
+module will generate a notification and send it to the push gateway operated
+by your application’s developers).  Their gateway will then connect to your
+device’s OS vendor and ask them to forward the notification to your device.
+When your device receives the notification, it will display it or wake up the
+app so it can connect to XMPP and receive any pending messages.")))
+
+(define-public prosody-cloud-notify-encrypted
+  (package
+    (inherit (prosody-module "mod_cloud_notify_encrypted"))
+    (propagated-inputs (list lua5.2-ossl))
+    (synopsis "Custom extension to XEP-0357: Push Notifications")
+    (description "This module implements support for a Encrypted Push
+Notifications, a custom extension to XEP-0357: Push Notifications.")))
+
+(define-public prosody-cloud-notify-filters
+  (package
+    (inherit (prosody-module "mod_cloud_notify_filters"))
+    (synopsis "Filters for XEP-0357: Push Notifications")
+    (description "This module implements support for a group of push
+notification extensions by the Tigase team that allow a client to specify
+filters to be applied to push notifications.  It is a custom extension to
+XEP-0357: Push Notifications.")))
+
+(define-public prosody-cloud-notify-priority-tag
+  (package
+    (inherit (prosody-module "mod_cloud_notify_priority_tag"))
+    (synopsis "Tigase priorities for XEP-0357: Push Notifications")
+    (description "This module implements support for a Tigase XMPP extension,
+Priority of notifications.  It is a custom extension to XEP-0357: Push
+Notifications.")))
+
 (define-public prosody-http-upload
   (package
     (inherit (prosody-module "mod_http_upload"))
     (synopsis "XEP-0363: Allow clients to upload files over HTTP")
     (description "This module implements XEP-0363: it allows clients to
 upload files over HTTP.")))
+
+(define-public prosody-muc-offline-delivery
+  (package
+    (inherit (prosody-module "mod_muc_offline_delivery"))
+    (synopsis "Deliver MUC messages to users who are not in the room")
+    (description "This module implements support for sending messages in a MUC
+to affiliated users who are not in the room.  This is a custom extension by
+Tigase to allow push notifications from MUCs to users who are not currently
+connected.")))
 
 (define-public prosody-smacks
   (package

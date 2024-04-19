@@ -3566,12 +3566,11 @@ is the GNU Compiler Collection.")
                 ("ld-wrapper" ,(car (assoc-ref (%final-inputs (%current-system))
                                                "ld-wrapper")))
                 ("binutils" ,binutils-final)
+                ("gcc-lib" ,gcc "lib")
                 ("libc" ,libc)
                 ("libc-debug" ,libc "debug")
                 ("libc-static" ,libc "static"))))))
 
-(define-public gcc-toolchain
-  (make-gcc-toolchain gcc-final))
 
 (define-public gcc-toolchain-4.8
   (make-gcc-toolchain gcc-4.8))
@@ -3598,7 +3597,7 @@ is the GNU Compiler Collection.")
   (make-gcc-toolchain gcc-10))
 
 (define-public gcc-toolchain-11
-  gcc-toolchain)
+    (make-gcc-toolchain gcc-11))
 
 (define-public gcc-toolchain-12
   (make-gcc-toolchain gcc-12))
@@ -3606,10 +3605,14 @@ is the GNU Compiler Collection.")
 (define-public gcc-toolchain-13
   (make-gcc-toolchain gcc-13))
 
+;; The default GCC
+(define-public gcc-toolchain
+  gcc-toolchain-11)
+
 (define-public gcc-toolchain-aka-gcc
   ;; It's natural for users to try "guix install gcc".  This package
   ;; automatically "redirects" them to 'gcc-toolchain'.
-  (deprecated-package "gcc" gcc-toolchain-11))
+  (deprecated-package "gcc" gcc-toolchain))
 
 
 (define-public gdc-toolchain-10

@@ -115,7 +115,7 @@
 (define-public pspp
   (package
     (name "pspp")
-    (version "2.0.0")
+    (version "2.0.1")
     (source
      (origin
       (method url-fetch)
@@ -123,7 +123,7 @@
                           version ".tar.gz"))
       (sha256
        (base32
-        "1pyqlab9kw65wxc8pilcwb64l18w37xxdg3r6n287c7mda4cpxm8"))))
+        "002c08rxym056mn7a73jwjmcazqd4gh5j1cyml603y4ckvqb1nwf"))))
     (build-system gnu-build-system)
     (arguments
      (list #:phases
@@ -180,9 +180,13 @@ be output in text, PostScript, PDF or HTML.")
                (base32
                 "0aa2w4g5057vn1qjp954s2kwxfmy1h7p5yn56fyi7sz9nmaq69gr"))))
     (build-system gnu-build-system)
+    (arguments
+     (list #:configure-flags
+           #~(list "--with-lapack=-lopenblas"
+              "--with-blas=-lopenblas")))
     (home-page "https://mcmc-jags.sourceforge.net/")
     (native-inputs
-     (list gfortran lapack))
+     (list gfortran openblas))
     (synopsis "Gibbs sampler")
     (description "JAGS is Just Another Gibbs Sampler.  It is a program for
 analysis of Bayesian hierarchical models using Markov Chain Monte Carlo (MCMC)
@@ -600,14 +604,14 @@ Hubert, based on Kaufman and Rousseeuw (1990) \"Finding Groups in Data\".")
 (define-public r-codetools
   (package
     (name "r-codetools")
-    (version "0.2-19")
+    (version "0.2-20")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "codetools" version))
        (sha256
         (base32
-         "1ardg28x2cvilkgsj6bdvvp5snsy3rj7jbz9bpcdlcvzr1kybdy4"))))
+         "0qx8zrlickl45wzzbydsbx5f1vmzhn71x7amzpfj71qpxisz7riv"))))
     (build-system r-build-system)
     (home-page "https://cran.r-project.org/web/packages/codetools")
     (synopsis "Code analysis tools for R")
@@ -663,13 +667,13 @@ estimation) corresponding to the book: Wand, M.P. and Jones, M.C. (1995)
 (define-public r-lattice
   (package
     (name "r-lattice")
-    (version "0.22-5")
+    (version "0.22-6")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "lattice" version))
               (sha256
                (base32
-                "1wd5dlxi0hd4l08g999y3xnxnaq06gwvflcqr9ym0cx131gbw7xs"))))
+                "1xq09lfjlca6c7mn412hjjav0q66p7wmjrwx5f3ygv3jwh8p4dsb"))))
     (build-system r-build-system)
     (home-page "https://lattice.r-forge.r-project.org/")
     (synopsis "High-level data visualization system")
@@ -1064,13 +1068,13 @@ see package vignette.  To quote Rene Magritte, \"Ceci n'est pas un pipe.\"")
 (define-public r-munsell
   (package
     (name "r-munsell")
-    (version "0.5.0")
+    (version "0.5.1")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "munsell" version))
        (sha256
-        (base32 "16g1fzisbpqb15yh3pqf3iia4csppva5dnv1z88x9dg263xskwyh"))))
+        (base32 "19i9jjawlqciw4n4h99a4sm0lbc77la3pqyzjvnwsrh7qjdgv8h3"))))
     (build-system r-build-system)
     (propagated-inputs
      (list r-colorspace))
@@ -1620,13 +1624,13 @@ emitter (http://pyyaml.org/wiki/LibYAML) for R.")
 (define-public r-knitr
   (package
     (name "r-knitr")
-    (version "1.45")
+    (version "1.46")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "knitr" version))
               (sha256
                (base32
-                "1yw4fnzm8lvh6kpcdlvr1fahz7421h5mmaris58zlgn57fjxwbpf"))))
+                "0ng8kw79csvcg46lsm3yf147jh6rf91jbj8qlryaihd8jcyc6lcg"))))
     (build-system r-build-system)
     (propagated-inputs
      (list r-evaluate r-highr r-xfun r-yaml))
@@ -1908,14 +1912,14 @@ database.")
 (define-public r-dbplyr
   (package
     (name "r-dbplyr")
-    (version "2.4.0")
+    (version "2.5.0")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "dbplyr" version))
        (sha256
         (base32
-         "1rzi8112fi0bx2fj0j5ak9bfgqgjk5k5dv66qrb890gsf5bz6m4i"))))
+         "1zxw4ignzm2fzixsf6n80f44b9q7434vamy2xj4v31wlx3dmnixv"))))
     (build-system r-build-system)
     (propagated-inputs
      (list r-blob
@@ -2033,13 +2037,13 @@ times.")
 (define-public r-data-table
   (package
     (name "r-data-table")
-    (version "1.15.2")
+    (version "1.15.4")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "data.table" version))
               (sha256
                (base32
-                "04pfcm3pyl997rpyj5zdmbhi4ndaai81vfgv4whjp8rhqzjk7i6j"))))
+                "0lyb82kl2bn70l9ag5xdr8q7rh4majbimygaynmfqnbdjkznb05b"))))
     (properties `((upstream-name . "data.table")))
     (build-system r-build-system)
     (inputs
@@ -2176,7 +2180,7 @@ machine learning, computer vision, and high-dimensional statistics.")
 (define-public python-arviz
   (package
     (name "python-arviz")
-    (version "0.17.0")
+    (version "0.17.1")
     (source (origin
               (method git-fetch)        ; PyPI misses some test files
               (uri (git-reference
@@ -2185,7 +2189,7 @@ machine learning, computer vision, and high-dimensional statistics.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0rmv7nniciq2jjnmk3qslc777wm8mjp7vsbk5dqx87a94dp7198f"))))
+                "1rpm2a9swzhnqn84dfsbc8kvz6qnn8w2icr3p08gwax9h9pg4ksp"))))
     (build-system pyproject-build-system)
     (arguments
      ;; FIXME: matplotlib tests fail because of the "--save" test flag.
@@ -2224,7 +2228,7 @@ comparison and diagnostics.")
 (define-public python-pymc
   (package
     (name "python-pymc")
-    (version "5.10.3")
+    (version "5.11.0")
     (source (origin
               (method git-fetch)        ; no tests in PyPI
               (uri (git-reference
@@ -2233,7 +2237,7 @@ comparison and diagnostics.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "0ydngbki4xb0i4j0nayzqqrvwlxp30fp56kiwm95n2i7iwgmki02"))))
+                "0x94qzq3z02fxlliz1xfdpb2pbn7nhp4skzcxz6qdavbj9xqcxys"))))
     (build-system pyproject-build-system)
     (arguments
      (list #:tests? #f ; tests are too computationally intensive
@@ -2347,13 +2351,13 @@ building design matrices.")
 (define-public python-mapie
   (package
     (name "python-mapie")
-    (version "0.8.2")
+    (version "0.8.3")
     (source (origin
               (method url-fetch)
               (uri (pypi-uri "MAPIE" version))
               (sha256
                (base32
-                "185nnsl6ag2xzkfxpmc86d9dd8wf2v87b2psan10sma399fbqd0x"))))
+                "13kgyqk1hp603n9zym835kp1pqs83k0j7ymayw4fk0zx4z1nmvdx"))))
     (build-system pyproject-build-system)
     (native-inputs (list python-pandas python-pytest))
     (propagated-inputs (list python-numpy python-scikit-learn))
@@ -2437,7 +2441,8 @@ sampler for Markov chain Monte Carlo (MCMC).")
            python-pytest-randomly
            python-pytest-xdist
            python-setuptools-scm))
-    (home-page "https://statsmodels.sourceforge.net/")
+    (home-page
+     (string-append "https://www.statsmodels.org/v" version "/"))
     (synopsis "Statistical modeling and econometrics in Python")
     (description
      "Statsmodels is a Python package that provides a complement to scipy for
@@ -2981,13 +2986,13 @@ pure C implementation of the Git core methods.")
 (define-public r-rstudioapi
   (package
     (name "r-rstudioapi")
-    (version "0.15.0")
+    (version "0.16.0")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "rstudioapi" version))
               (sha256
                (base32
-                "1kvc870gx02cpb800zjvdrhfhyfpzgkydgw2g7kxdlrpr8fwhnwk"))))
+                "1rjgxn7p15a69vfkhwrxywag6w9k4ccnklpvhr1sb1wy35ksizvl"))))
     (build-system r-build-system)
     (native-inputs
      (list r-knitr))
@@ -3179,13 +3184,13 @@ well as additional utilities such as panel and axis annotation functions.")
 (define-public r-rcpparmadillo
   (package
     (name "r-rcpparmadillo")
-    (version "0.12.8.1.0")
+    (version "0.12.8.2.0")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "RcppArmadillo" version))
               (sha256
                (base32
-                "0ax4812dm33c67ckd902qabis3dgqmpkchk4s30bshnfv4fxx1z2"))))
+                "0w1c0mpqqf6m2gk4221kjxx299bs4qpxn867fgnkpg69kj3mh8gd"))))
     (properties `((upstream-name . "RcppArmadillo")))
     (build-system r-build-system)
     (propagated-inputs
@@ -3392,13 +3397,13 @@ a column in data frame.")
 (define-public r-rsqlite
   (package
     (name "r-rsqlite")
-    (version "2.3.5")
+    (version "2.3.6")
     (source (origin
               (method url-fetch)
               (uri (cran-uri "RSQLite" version))
               (sha256
                (base32
-                "1wvfadwcr8iv0z6pddfpvl60dq4p8l68v16p9daa002srgzpwlw1"))))
+                "1wpqr71wckxrh8ih5f01wkqqqnq5s3zaj0m8b40g76pliyjvgcgv"))))
     (properties `((upstream-name . "RSQLite")))
     (build-system r-build-system)
     (propagated-inputs
@@ -3829,13 +3834,13 @@ using the multicore functionality of the parallel package.")
              "datatables-extensions/Buttons"))))
     (package
       (name "r-dt")
-      (version "0.32")
+      (version "0.33")
       (source (origin
                 (method url-fetch)
                 (uri (cran-uri "DT" version))
                 (sha256
                  (base32
-                  "0nvj2bc441b9h13085fa7q281f86lgx4k0d8lr64xgdpbmbvkl21"))
+                  "1f17gdqjk1aj7vwjvv3363k8lnsvc6ssh4s3gy1prnz33kdxlig1"))
                 (modules '((guix build utils)
                            (ice-9 match)))
                 (snippet
@@ -6055,14 +6060,14 @@ algorithms.")
 (define-public r-lme4
   (package
     (name "r-lme4")
-    (version "1.1-35.1")
+    (version "1.1-35.2")
     (source
      (origin
        (method url-fetch)
        (uri (cran-uri "lme4" version))
        (sha256
         (base32
-         "0nzv1a22pfsf2ryw91h16ic4cb8y8g6wh0gx3msr7gv8dwwi3974"))))
+         "0nvvkvpasna9hy0y3fxd4fy2b2gxzgdga9kmxvli59dlkdy28ipc"))))
     (build-system r-build-system)
     (propagated-inputs
      (list r-boot
@@ -6883,19 +6888,35 @@ Java package that provides routines for various statistical distributions.")
                              (((string-append "^\\(ert-deftest " test-name ".*")
                                all)
                               (string-append all "(skip-unless nil)\n"))
-                             ...)))))
+                             ...))))
+                       (disable-etests  ;different test syntax
+                        (syntax-rules ()
+                          ((_ file ())
+                           (syntax-error "test names list must not be empty"))
+                          ((_ file (test-name ...))
+                           (emacs-batch-edit-file file
+                             '(progn
+                               (mapc (lambda (test)
+                                       (goto-char (point-min))
+                                       (search-forward
+                                        (format "etest-deftest %s " test))
+                                       (beginning-of-line)
+                                       (kill-sexp))
+                                     (list test-name ...))
+                               (basic-save-buffer)))))))
                     (disable-tests (list "test/ess-test-inf.el"
                                          "test/ess-test-r.el")
                                    ("ess--derive-connection-path"
                                     "ess-eval-line-test"
                                     "ess-eval-region-test"
                                     "ess-mock-remote-process"
-                                    "ess-r-eval-sink-freeze-test"
-                                    "ess-r-eval-ns-env-roxy-tracebug-test"
                                     "ess-r-load-ESSR-github-fetch-no"
                                     "ess-r-load-ESSR-github-fetch-yes"
                                     "ess-set-working-directory-test"
-                                    "ess-test-r-startup-directory")))))
+                                    "ess-test-r-startup-directory"))
+                    (disable-etests "test/ess-test-r-eval.el"
+                                    ("ess-r-eval-ns-env-roxy-tracebug-test"
+                                     "ess-r-eval-sink-freeze-test")))))
               (replace 'check
                 (lambda* (#:key tests? #:allow-other-keys)
                   (when tests? (invoke "make" "test"))))))))

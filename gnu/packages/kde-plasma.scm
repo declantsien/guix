@@ -793,7 +793,7 @@ PipeWire in Qt projects.")
                   libkscreen
                   libxi
                   plasma-wayland-protocols
-                  qtsensors
+                  qtsensors-5
                   qtbase-5
                   qtx11extras
                   xcb-util))
@@ -1474,7 +1474,7 @@ on top of Baloo.")
                          (mkdir #$output))))
     ;; TODO: cleanup, check what is no need
     (propagated-inputs (list kdeclarative ;; require by sddm breeze theme
-
+                             qqc2-desktop-style ; qtquickcontrols2 theme
                              baloo
                              breeze-icons ; default mouse icon
                              breeze

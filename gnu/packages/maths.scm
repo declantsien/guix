@@ -12,7 +12,7 @@
 ;;; Copyright © 2015 Fabian Harfert <fhmgufs@web.de>
 ;;; Copyright © 2016 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2016, 2018, 2020, 2021 Kei Kebreau <kkebreau@posteo.net>
-;;; Copyright © 2016-2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2016-2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2016, 2017 Thomas Danckaert <post@thomasdanckaert.be>
 ;;; Copyright © 2017, 2018, 2019, 2020, 2021 Paul Garlick <pgarlick@tourbillion-technology.com>
@@ -48,7 +48,7 @@
 ;;; Copyright © 2021, 2022 Paul A. Patience <paul@apatience.com>
 ;;; Copyright © 2021 Ivan Gankevich <i.gankevich@spbu.ru>
 ;;; Copyright © 2021 Jean-Baptiste Volatier <jbv@pm.me>
-;;; Copyright © 2021, 2023 Guillaume Le Vaillant <glv@posteo.net>
+;;; Copyright © 2021, 2023, 2024 Guillaume Le Vaillant <glv@posteo.net>
 ;;; Copyright © 2021 Pierre-Antoine Bouttier <pierre-antoine.bouttier@univ-grenoble-alpes.fr>
 ;;; Copyright © 2022 Zhu Zihao <all_but_last@163.com>
 ;;; Copyright © 2022 Sharlatan Hellseher <sharlatanus@gmail.com>
@@ -127,6 +127,7 @@
   #:use-module (gnu packages flex)
   #:use-module (gnu packages fltk)
   #:use-module (gnu packages fontutils)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages gettext)
   #:use-module (gnu packages gcc)
   #:use-module (gnu packages gd)
@@ -401,6 +402,7 @@ triangulations.")
          (add-after 'unpack 'find-libraries
            (lambda* (#:key inputs #:allow-other-keys)
              (setenv "CVXOPT_BLAS_LIB" "openblas")
+             (setenv "CVXOPT_LAPACK_LIB" "openblas")
              (setenv "CVXOPT_BUILD_FFTW" "1")
              (setenv "CVXOPT_BUILD_GLPK" "1")
              (setenv "CVXOPT_BUILD_GSL" "1")
@@ -409,7 +411,6 @@ triangulations.")
      (list fftw
            glpk
            gsl
-           lapack
            openblas
            suitesparse))
     (home-page "https://www.cvxopt.org")
@@ -1071,7 +1072,7 @@ halfspaces) or by their double description with both representations.")
     (native-inputs
      (list pkg-config))
     (inputs
-     (list eigen lapack gfortran))
+     (list eigen openblas gfortran))
     (synopsis "Fortran subroutines for solving eigenvalue problems")
     (description
      "ARPACK-NG is a collection of Fortran77 subroutines designed to solve
@@ -1198,7 +1199,7 @@ provide LAPACK for someone who does not have access to a Fortran compiler.")
     (inputs
      `(("mpi" ,openmpi)
        ("fortran" ,gfortran)
-       ("lapack" ,lapack)))             ;for testing only
+       ("lapack" ,openblas)))             ;for testing only
     (arguments
      `(#:configure-flags `("-DBUILD_SHARED_LIBS:BOOL=YES")
        #:phases (modify-phases %standard-phases
@@ -1434,7 +1435,7 @@ Extern C linkage permits the package routines to be called from C++.")
                 "153kj4wx386609g21hw3cv5yxps62qqrc64zwb9ryd2xad1w1a4y"))))
     (build-system gnu-build-system)
     (native-inputs (list gfortran pkg-config))
-    (inputs (list cbc ipopt lapack))
+    (inputs (list cbc ipopt openblas))
     (home-page "https://coin-or.github.io/Bonmin/")
     (synopsis "Basic Open-source Nonlinear Mixed INteger programming")
     (description "Bonmin is a code for solving general MINLP (Mixed Integer
@@ -2152,7 +2153,7 @@ the resulting text.")
                      ;; SOURCE_DATE_EPOCH
                      (lambda _
                        (setenv "FORCE_SOURCE_DATE" "1"))))))
-    (inputs (list lapack fftw))
+    (inputs (list openblas fftw))
     ;; FIXME: Even though the fonts are available dvips complains:
     ;; "Font cmmi10 not found; characters will be left blank."
     (native-inputs
@@ -2400,7 +2401,8 @@ online as well as original implementations of various other algorithms.")
                 "08gznhwhqv1x4baksz350ih8q16r5rd0k8vals6078m3h94khr4b"))))
     (build-system gnu-build-system)
     (arguments
-     '(#:phases (modify-phases %standard-phases
+     '(#:configure-flags (list "--with-lapack=-lopenblas")
+       #:phases (modify-phases %standard-phases
                   (add-after 'install 'add--L-flags-in-ipopt.pc
                     (lambda* (#:key inputs outputs #:allow-other-keys)
                       ;; The '.pc' file lists '-llapack -lblas' in "Libs";
@@ -2413,14 +2415,14 @@ online as well as original implementations of various other algorithms.")
                           (("Libs: (.*)-llapack -lblas(.*)$" _ before after)
                            (string-append "Libs: " before " " after "\n"
                                           "Libs.private: " before
-                                          "-L" lapack "/lib -llapack -lblas "
+                                          "-L" openblas "/lib -lopenblas"
                                           after "\n")))
                         #t))))))
     (native-inputs
      (list gfortran pkg-config))
     (inputs
      ;; TODO: Maybe add dependency on COIN-MUMPS, ASL, and HSL.
-     (list lapack))                    ;for both libblas and liblapack
+     (list openblas))                    ;for both libblas and liblapack
     (home-page "https://www.coin-or.org")
     (synopsis "Large-scale nonlinear optimizer")
     (description
@@ -2763,9 +2765,9 @@ fixed point (16.16) format.")
                    (lambda* (#:key tests? #:allow-other-keys)
                      (substitute* "test/Makefile"
                        (("LIBBLAS .*")
-                        "LIBBLAS = -lblas\n")
+                        "LIBBLAS = -lopenblas\n")
                        (("LIBLAPACK .*")
-                        "LIBLAPACK = -llapack\n"))
+                        "LIBLAPACK = -lopenblas\n"))
                      (when tests?
                        (with-directory-excursion "test"
                          (mkdir "obj")
@@ -2784,7 +2786,7 @@ fixed point (16.16) format.")
                                                     "/include/FLAME.h")
                                      (string-append static "/include"))))))))
       (inputs (list gfortran))
-      (native-inputs (list lapack perl python-wrapper))
+      (native-inputs (list openblas perl python-wrapper))
       (synopsis "High-performance library for @acronym{DLA, dense linear algebra} computations")
       (description "@code{libflame} is a portable library for dense matrix
 computations, providing much of the functionality present in LAPACK, developed
@@ -2858,7 +2860,7 @@ with constraints.")
     (native-inputs (list pkg-config))
     ;; These inputs need to be propagated to satisfy dependent packages.
     (propagated-inputs (list eigen gflags glog))
-    (inputs (list openblas lapack suitesparse))
+    (inputs (list openblas suitesparse))
     (synopsis "C++ library for solving large optimization problems")
     (description
      "Ceres Solver is a C++ library for modeling and solving large,
@@ -2925,7 +2927,7 @@ can solve two kinds of problems:
 (define-public octave-cli
   (package
     (name "octave-cli")
-    (version "8.4.0")
+    (version "9.1.0")
     (source
      (origin
        (method url-fetch)
@@ -2933,7 +2935,7 @@ can solve two kinds of problems:
                            version ".tar.xz"))
        (sha256
         (base32
-         "1a58zyrl1lx6b6wr2jbf6w806vjxr3jzbh6n85iinag47qxdg6kg"))))
+         "0jqk3amfkqzn1c5rzb9gm3v7r2y5xcgx6cgi4r5w8mpa9814nrgd"))))
     (build-system gnu-build-system)
     (inputs
      (list alsa-lib
@@ -2956,10 +2958,10 @@ can solve two kinds of problems:
            libjpeg-turbo
 
            hdf5
-           lapack
            libsndfile
            libxft
            mesa
+           openblas
            pcre
            portaudio
            qhull
@@ -3263,11 +3265,11 @@ compilers.")
            glu
            gmp
            hdf5
-           lapack
            libx11
            libxext
            mesa
            metis
+           openblas
            opencascade-occt))
     (inputs
      (list fontconfig
@@ -4443,7 +4445,6 @@ void mc64ad_dist (int *a, int *b, int *c, int *d, int *e, double *f, int *g,
     (inputs
      `(("gfortran" ,gfortran)
        ("blas" ,openblas)
-       ("lapack" ,lapack)
        ("combblas" ,combinatorial-blas)))
     (propagated-inputs
      `(("mpi" ,openmpi)                 ;headers include MPI heades
@@ -4454,11 +4455,11 @@ void mc64ad_dist (int *a, int *b, int *c, int *d, int *e, double *f, int *g,
        #:configure-flags (list "-DBUILD_SHARED_LIBS:BOOL=YES"
                                "-DTPL_ENABLE_COMBBLASLIB=YES"
                                "-DTPL_BLAS_LIBRARIES=-lopenblas"
-                               "-DTPL_LAPACK_LIBRARIES=-llapack"
+                               "-DTPL_LAPACK_LIBRARIES=-lopenblas"
                                (string-append "-DTPL_PARMETIS_LIBRARIES="
                                               (string-join
-                                               '("ptscotchparmetis" "ptscotch" "ptscotcherr"
-                                                 "scotchmetis" "scotch" "scotcherr")
+                                               '("ptscotchparmetisv3" "ptscotcherr"
+                                                 "scotchmetisv3" "scotcherr")
                                                ";"))
                                (string-append "-DTPL_PARMETIS_INCLUDE_DIRS="
                                               (assoc-ref %build-inputs "parmetis")
@@ -4501,7 +4502,14 @@ implemented in ANSI C, and MPI for communications.")
              (commit (string-append "v" version))))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "0rbc51albpd2923dkirpkj8rfkic6rsvwqqnv1mmsk391zhk3amr"))))
+        (base32 "0rbc51albpd2923dkirpkj8rfkic6rsvwqqnv1mmsk391zhk3amr"))
+       (modules '((guix build utils)))
+       (snippet
+        #~(substitute* "src/libscotchmetis/library_parmetis.h"
+            (("typedef DUMMYINT SCOTCH_Num" all)
+             ;; 'DUMMYINT' is typically replaced by 'int32_t'.  Include
+             ;; <stdint.h> to get that type definition.
+             (string-append "#include <stdint.h>\n" all "\n"))))))
     (build-system cmake-build-system)
     (inputs
      (list zlib))
@@ -4730,15 +4738,14 @@ schemes.")
     (inputs
      `(("fortran" ,gfortran)
        ("blas" ,openblas)
-       ("lapack" ,lapack)
        ("zlib" ,zlib)))
     (arguments
      `(#:configure-flags `(,(string-append "BLAS_LIBS=-L"
                                            (assoc-ref %build-inputs "blas")
                                            " -lopenblas")
                            ,(string-append "LAPACK_LIBS=-L"
-                                           (assoc-ref %build-inputs "lapack")
-                                           " -llapack"))
+                                           (assoc-ref %build-inputs "blas")
+                                           " -lopenblas"))
        #:phases (modify-phases %standard-phases
                   (add-before 'check 'mpi-setup
 		    ,%openmpi-setup))))
@@ -4986,9 +4993,11 @@ full text searching.")
                (base32
                 "15zkvjbdxiiazhvh0g6y0ig9pgc4rvwnzplmnkx9dffz4xfn69w1"))))
     (build-system cmake-build-system)
-    (arguments `(#:tests? #f))          ; no test target
+    (arguments
+     `(#:tests? #f  ; no test target
+       #:configure-flags '("-DOPENBLAS_PROVIDES_LAPACK=ON")))
     (inputs
-     (list openblas lapack arpack-ng))
+     (list openblas arpack-ng))
     (home-page "https://arma.sourceforge.net/")
     (synopsis "C++ linear algebra library")
     (description
@@ -6790,7 +6799,6 @@ A unique design feature of Trilinos is its focus on packages.")
      (list arpack-ng
            openblas
            gfortran
-           lapack
            muparser
            zlib))
     (propagated-inputs
@@ -7107,7 +7115,7 @@ set.")
                   texlive-xcolor
                   texlive-xypic))))
     (inputs
-     (list openblas lapack))
+     (list openblas))
     (arguments
      `(#:modules ((srfi srfi-1)
                   ,@%default-gnu-modules)
@@ -7808,7 +7816,6 @@ symmetric matrices.")
       (inputs
        (list `(,gfortran "lib")
              gmp
-             lapack
              metis
              mpc
              mpfr
@@ -8046,7 +8053,7 @@ easily be incorporated into existing simulation codes.")
          "0nx4sqhmi126m14myzm7syv2053harav9snl0a247wnkcgs5rxrv"))))
     (inputs
      (modify-inputs (package-inputs sundials)
-       (prepend gfortran lapack)))
+       (prepend gfortran openblas)))
     (arguments
      '(#:configure-flags `("-DCMAKE_C_FLAGS=-O2 -g -fcommon"
                            "-DSUNDIALS_INDEX_SIZE=32"
@@ -9791,7 +9798,6 @@ computation is supported via MPI.")
                   fftw
                   gettext-minimal
                   hdf5-1.10
-                  lapack
                   libarchive
                   libx11
                   libxml2

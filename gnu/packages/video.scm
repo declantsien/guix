@@ -2028,7 +2028,8 @@ audio/video codec library.")
                    "ffmpeg-jami-rtp_ext_abs_send_time.patch"
                    "ffmpeg-jami-libopusdec-enable-FEC.patch"
                    "ffmpeg-jami-libopusenc-reload-packet-loss-at-encode.patch"
-                   "ffmpeg-jami-screen-sharing-x11-fix.patch"))))))
+                   "ffmpeg-jami-screen-sharing-x11-fix.patch"
+                   "ffmpeg-jami-pipewiregrab-source-filter.patch"))))))
     (arguments
      (substitute-keyword-arguments (package-arguments ffmpeg)
        ((#:configure-flags _ '())
@@ -4174,7 +4175,7 @@ Wayland compositors.")
 (define-public obs-vkcapture
   (package
     (name "obs-vkcapture")
-    (version "1.3.0")
+    (version "1.5.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4183,7 +4184,7 @@ Wayland compositors.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "18v15bfzm31qkpwipvbqgzak4z6f2hhq6mnz2bvhwnv57whirln6"))))
+                "00a69rg1inkssccqmwp1j85vrw17j2k6d5pidvzfdq94vvad10w5"))))
     (build-system cmake-build-system)
     (arguments
      '(#:tests? #f)) ;no tests

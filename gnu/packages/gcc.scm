@@ -982,10 +982,18 @@ using compilers other than GCC."
                (if (and (target-ppc64le?)
                        (version>=? version "11")
                        (not (version>=? version "12")))
-                   #~((add-after 'unpack 'patch-powerpc
-                        (lambda* (#:key inputs #:allow-other-keys)
-                          (invoke "patch" "--force" "-p1" "-i"
-                                  (assoc-ref inputs "powerpc64le-patch")))))
+                   ;; TODO: Drop the 'else' branch below on next rebuild
+                   ;; cycle.
+                   (if (%current-target-system)
+                       #~((add-after 'unpack 'patch-powerpc ;correct
+                            (lambda* (#:key native-inputs inputs #:allow-other-keys)
+                              (invoke "patch" "--force" "-p1" "-i"
+                                      (assoc-ref (or native-inputs inputs)
+                                                 "powerpc64le-patch")))))
+                       #~((add-after 'unpack 'patch-powerpc ;wrong
+                            (lambda* (#:key inputs #:allow-other-keys)
+                              (invoke "patch" "--force" "-p1" "-i"
+                                      (assoc-ref inputs "powerpc64le-patch"))))))
                    '()))
           ;; Force rs6000 (i.e., powerpc) libdir to be /lib and not /lib64.
           (add-after 'unpack 'fix-rs6000-libdir

@@ -17,7 +17,7 @@
 ;;; Copyright © 2019 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2019, 2020, 2021 Liliana Marie Prikler <liliana.prikler@gmail.com>
 ;;; Copyright © 2019 Jethro Cao <jethrocao@gmail.com>
-;;; Copyright © 2020-2023 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2020-2024 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;; Copyright © 2020 Timotej Lazar <timotej.lazar@araneo.si>
 ;;; Copyright © 2020 Giacomo Leidi <goodoldpaul@autistici.org>
 ;;; Copyright © 2021 Alexandru-Sergiu Marton <brown121407@posteo.ro>
@@ -2096,7 +2096,7 @@ scripted in a Python-like language.")
 (define-public godot
   (package
     (name "godot")
-    (version "4.1.3")
+    (version "4.2.1")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -2105,7 +2105,7 @@ scripted in a Python-like language.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1mwwzf77ixkalciqakn6q42g9sl2570didfll406sfs42wz534ng"))
+                "0d5y678986lx4a4xjkxs5glh2dckp8wwl3r3mw72inq7gvaa18s3"))
               (modules '((guix build utils)
                          (ice-9 ftw)
                          (srfi srfi-1)))
@@ -2118,19 +2118,28 @@ scripted in a Python-like language.")
                     (let* ((preserved-files
                             '("README.md"
                               "amd-fsr"
+                              "amd-fsr2"
                               "assimp"
                               "astcenc"
                               "basis_universal"
                               ;; Godot needs ca-certificates.crt, but that is
                               ;; not available in build environment
                               "certs"
+                              "clipper2"
                               "cvtt"
                               "linuxbsd_headers"
                               "etc2comp"
                               "etcpak"
                               "fonts"
                               "glad"
+                              ;; TODO: Remove once Godot once again builds
+                              ;; with our glslang package, or with a
+                              ;; workaround.  Currently it looks for a Types.h
+                              ;; which is no longer in the glslang output
+                              ;; after the most recent update.
+                              "glslang"
                               "jpeg-compressor"
+                              "libktx"
                               "libsimplewebm"
                               "meshoptimizer"
                               "minimp3"
@@ -2171,7 +2180,9 @@ scripted in a Python-like language.")
                         "builtin_embree=no"
                         "builtin_enet=no"
                         "builtin_freetype=no"
-                        "builtin_glslang=no"
+                        ;; TODO: Uncomment this option when the todo for
+                        ;; glslang in the snippet is resolved.
+                        ;; "builtin_glslang=no"
                         "builtin_graphite=no"
                         "builtin_harfbuzz=no"
                         "builtin_icu4c=no"
@@ -2819,14 +2830,14 @@ a.k.a. XenoCollide) as described in Game Programming Gems 7.")
 (define-public ode
   (package
     (name "ode")
-    (version "0.16.4")
+    (version "0.16.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://bitbucket.org/odedevs/ode/downloads/"
                            "ode-" version ".tar.gz"))
        (sha256
-        (base32 "0rrl4pn4h3g0ay0i3n61pr6bwyk9vgar17vjal56pj66h617n0vi"))
+        (base32 "0ya6slmy2iysx3fql7w7r56c7gsk93qp1apfjn3raw252vfmx1xs"))
        (modules '((guix build utils)))
        (snippet
         '(begin
@@ -2859,38 +2870,34 @@ computer games, 3D authoring tools and simulation tools.")
     (license (list license:lgpl2.1+ license:expat))))
 
 (define-public chipmunk
-  (package
-    (name "chipmunk")
-    (version "7.0.3")
-    (source
-     (origin
-       (method git-fetch)
-       (uri (git-reference
-             (url "https://github.com/slembcke/Chipmunk2D")
-             (commit (string-append "Chipmunk-" version))))
-       (file-name (git-file-name name version))
-       (sha256
-        (base32 "1qmkn01g06p3rnhmbyffmjns6wj5vhgf9cscigk3wzxcpwv1hyxb"))
-       (modules '((guix build utils)))
-       (snippet
-        #~(begin
-            ;; This is fixed in the upstream repository but the fix
-            ;; has not been released.
-            (substitute* "src/cpHastySpace.c"
-              (("#include <sys/sysctl.h>") ""))))))
-    (build-system cmake-build-system)
-    (arguments
-     (list #:tests? #f                      ;no test
-           #:configure-flags
-           #~(list "-DBUILD_STATIC=OFF"
-                   "-DBUILD_DEMOS=OFF")))
-    (inputs
-     (list freeglut libxmu libxrandr))
-    (home-page "https://chipmunk-physics.net/")
-    (synopsis "Fast and lightweight 2D game physics library")
-    (description "Chipmunk is a simple, lightweight, fast and portable 2D
+  (let ((commit "d0239ef4599b3688a5a336373f7d0a68426414ba")
+        (revision "1"))
+    (package
+      (name "chipmunk")
+      (version (git-version "7.0.3" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/slembcke/Chipmunk2D")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1910rfnanhna99bhfiyny3ki7aip2i9p4jzmwsfcg16m9gip5fd6"))
+         (modules '((guix build utils)))))
+      (build-system cmake-build-system)
+      (arguments
+       (list #:tests? #f                ;no test
+             #:configure-flags
+             #~(list "-DBUILD_STATIC=OFF"
+                     "-DBUILD_DEMOS=OFF")))
+      (inputs
+       (list freeglut libxmu libxrandr))
+      (home-page "https://chipmunk-physics.net/")
+      (synopsis "Fast and lightweight 2D game physics library")
+      (description "Chipmunk is a simple, lightweight, fast and portable 2D
 rigid body physics library written in C.")
-    (license license:expat)))
+      (license license:expat))))
 
 (define-public box2d
   (package

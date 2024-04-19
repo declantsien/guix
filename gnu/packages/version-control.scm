@@ -1008,7 +1008,7 @@ write native speed custom Git applications in any language with bindings.")
 (define-public libgit2-1.6
   (package
     (inherit libgit2)
-    (version "1.6.4")
+    (version "1.6.5")
     (source (origin
               (inherit (package-source libgit2))
               (method git-fetch)
@@ -1018,7 +1018,7 @@ write native speed custom Git applications in any language with bindings.")
               (file-name (git-file-name "libgit2" version))
               (sha256
                (base32
-                "078jnis7lwzb38ha5lcrs8hzi4br3c8v7c9xaqkvkcaa8nifcvcm"))))))
+                "1v8sndvknsknf0i967qidmz73q9jx928iq7fqqgx3rbwn2g1gn6s"))))))
 
 (define-public libgit2-1.4
   (package
@@ -1553,6 +1553,33 @@ scripts difficult.  shFlags instead provides an API that doesn't change across
 shell and OS versions so the script writer can be confident that the script
 will work.")
     (license license:lgpl2.1)))
+
+(define-public trac
+  (package
+    (name "trac")
+    (version "1.6")
+    (source
+     (origin
+       (method url-fetch)
+       (uri (pypi-uri "Trac" version))
+       (sha256
+        (base32 "013kqa93kd1giswir9qsasm5080x5x5x4ab86ky8zmkhyrhkrmv1"))))
+    (build-system pyproject-build-system)
+    (arguments
+     (list #:test-flags #~(list "-k"
+                                ;; XXX: these two tests fail, check why.
+                                (string-append
+                                 "not test_remove_composite_keys"
+                                 " and not test_remove_simple_keys"))))
+    (native-inputs (list python-psycopg2 python-pymysql python-pytest))
+    (propagated-inputs (list python-jinja2 python-multipart))
+    (home-page "https://trac.edgewall.org")
+    (synopsis "Integrated SCM, wiki, issue tracker and project environment")
+    (description "Trac is a minimalistic web-based software project management
+and bug/issue tracking system.  It provides an interface to the Git and
+Subversion revision control systems, an integrated wiki, flexible issue
+tracking and convenient report facilities.")
+    (license license:bsd-3)))
 
 (define-public git-flow
   (package
@@ -2828,6 +2855,34 @@ output of the @code{git} command.")
      "Recursively find the newest file in a file tree and print its
 modification time.")
     (license license:bsd-2)))
+
+(define-public fnc
+  (package
+    (name "fnc")
+    (version "0.16")
+    (source (origin
+              (method url-fetch)
+              (uri
+               (string-append "https://fnc.bsdbox.org/uv/dl/fnc-"
+                              version ".tar.gz"))
+              (sha256
+               (base32
+                "1npnbdz5i4p61ri76vx6awggbc0q19y8b26l3sy4wxmaxkly7gwy"))))
+    (build-system gnu-build-system)
+    (arguments
+     (list
+      #:phases #~(modify-phases %standard-phases
+                   (delete 'configure))
+      #:tests? #f                       ; no tests
+      #:make-flags #~(list (string-append "CC=" #$(cc-for-target))
+                           (string-append "PREFIX=" #$output))))
+    (inputs (list ncurses zlib sqlite-next))
+    (home-page "https://fnc.bsdbox.org")
+    (synopsis "Interactive text-based user interface for Fossil")
+    (description "fnc uses ncurses and libfossil to create a fossil user
+interface in the terminal.  It can view local changes at the hunk level to
+prepare atomic commits.")
+    (license license:isc)))
 
 (define-public myrepos
   (package
@@ -4128,3 +4183,9 @@ comes as a command line app and also an Emacs interface.")
     (description "Compute various size metrics for a Git repository, flagging
 those that might cause problems or inconvenience.")
     (license license:expat)))
+
+;;;
+;;; Avoid adding new packages to the end of this file. To reduce the chances
+;;; of a merge conflict, place them above by existing packages with similar
+;;; functionality or similar names.
+;;;

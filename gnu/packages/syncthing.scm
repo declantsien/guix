@@ -355,55 +355,6 @@ structs in the Go programming language.")
     (home-page "https://github.com/d4l3k/messagediff")
     (license expat)))
 
-(define-public go-github-com-gobwas-glob
-  (package
-    (name "go-github-com-gobwas-glob")
-    (version "0.2.3")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                     (url "https://github.com/gobwas/glob")
-                     (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "0jxk1x806zn5x86342s72dq2qy64ksb3zrvrlgir2avjhwb18n6z"))))
-    (build-system go-build-system)
-    (arguments
-      `(#:import-path "github.com/gobwas/glob"))
-    (synopsis "Go globbing library")
-    (description "This package provides a Go implementation of globs.")
-    (home-page "https://github.com/gobwas/glob")
-    (license expat)))
-
-
-(define-public go-github-com-golang-groupcache-lru
-  (let ((commit "869f871628b6baa9cfbc11732cdf6546b17c1298")
-        (revision "2"))
-    (package
-      (name "go-github-com-golang-groupcache-lru")
-      (version (git-version "0.0.0" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                      (url "https://github.com/golang/groupcache")
-                      (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "0r4nk8129bvx50qb4xzjaay39b2h6k7cbdqqzdlanmc82ygczsbw"))))
-      (build-system go-build-system)
-      (arguments
-       `(#:import-path "github.com/golang/groupcache/lru"
-         #:unpack-path "github.com/golang/groupcache"))
-      (synopsis "Groupcache is a caching and cache-filling library")
-      (description "Groupcache is a caching and cache-filling library, intended
-as a replacement for memcached in many cases.  It provides a data loading
-mechanism with caching and de-duplication that works across a set of peer
-processes.")
-      (home-page "https://github.com/golang/groupcache")
-      (license asl2.0))))
-
 (define-public go-github-com-jackpal-gateway
   (package
     (name "go-github-com-jackpal-gateway")
@@ -425,31 +376,6 @@ processes.")
 address of the default LAN gateway.")
     (home-page "https://github.com/jackpal/gateway")
     (license bsd-3)))
-
-(define-public go-github-com-lib-pq
-  (package
-    (name "go-github-com-lib-pq")
-    (version "1.2.0")
-    (source (origin
-              (method git-fetch)
-              (uri (git-reference
-                    (url "https://github.com/lib/pq")
-                    (commit (string-append "v" version))))
-              (file-name (git-file-name name version))
-              (sha256
-               (base32
-                "08j1smm6rassdssdks4yh9aspa1dv1g5nvwimmknspvhx8a7waqz"))))
-    (build-system go-build-system)
-    (arguments
-     `(#:import-path "github.com/lib/pq"
-       ;; The tests seem to fail without access to the network or a running
-       ;; Postgres instance.
-       #:tests? #f))
-    (synopsis "Golang Postgres driver for Go's database/sql")
-    (description "This package provides a pure Go Postgres driver for Go's
-database/sql package.")
-    (home-page "https://github.com/lib/pq")
-    (license expat)))
 
 (define-public go-github-com-oschwald-geoip2-golang
   (package
@@ -659,30 +585,6 @@ hashes.")
 the current goroutine's ID.")
       (home-page "https://github.com/petermattis/goid")
       (license asl2.0))))
-
-(define-public go-github-com-kballard-go-shellquote
-  (let ((commit "95032a82bc518f77982ea72343cc1ade730072f0")
-        (revision "1"))
-    (package
-      (name "go-github-com-kballard-go-shellquote")
-      (version (git-version "0.0.0" revision commit))
-      (source (origin
-                (method git-fetch)
-                (uri (git-reference
-                       (url "https://github.com/kballard/go-shellquote")
-                       (commit commit)))
-                (file-name (git-file-name name version))
-                (sha256
-                 (base32
-                  "1rspvmnsikdq95jmx3dykxd4k1rmgl98ryjrysvl0cf18hl1vq80"))))
-      (build-system go-build-system)
-      (arguments
-       '(#:import-path "github.com/kballard/go-shellquote"))
-      (synopsis "Shell-style string joins and splits")
-      (description "Shellquote provides utilities for joining/splitting strings
-using sh's word-splitting rules.")
-      (home-page "https://github.com/kballard/go-shellquote")
-      (license expat))))
 
 (define-public go-github-com-syncthing-notify
   (let ((commit "69c7a957d3e261f9744f46b3dd4d608d8480ad90")

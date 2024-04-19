@@ -4,9 +4,9 @@
 ;;; Copyright © 2022 muradm <mail@muradm.net>
 ;;; Copyright © 2022 Aleksandr Vityazev <avityazev@posteo.org>
 ;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
-;;; Copyright © 2023 Nicolas Graves <ngraves@ngraves.fr>
+;;; Copyright © 2023, 2024 Nicolas Graves <ngraves@ngraves.fr>
 ;;; Copyright © 2023 Zheng Junjie <873216071@qq.com>
-;;; Copyright © 2023 Raven Hallsby <karl@hallsby.com>
+;;; Copyright © 2023, 2024 Raven Hallsby <karl@hallsby.com>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -457,6 +457,15 @@ which will be used as a snippet in origin."
      (git-version "0.14.0" revision commit)
      #:commit commit)))
 
+(define-public tree-sitter-hcl
+  (tree-sitter-grammar
+   "hcl" "HCL"
+   "1yydi61jki7xpabi0aq6ykz4w4cya15g8rp34apb6qq9hm4lm9di"
+   "1.1.0"
+   #:article "an"
+   #:repository-url "https://github.com/tree-sitter-grammars/tree-sitter-hcl"
+   #:license license:asl2.0))
+
 (define-public tree-sitter-java
   (tree-sitter-grammar
    "java" "Java"
@@ -477,6 +486,13 @@ which will be used as a snippet in origin."
    "julia" "Julia"
    "1pbnmvhy2gq4vg1b0sjzmjm4s2gsgdjh7h01yj8qrrqbcl29c463"
    "0.19.0"))
+
+(define-public tree-sitter-kdl
+  (tree-sitter-grammar
+   "kdl" "KDL"
+   "1015x24ffrvzb0m0wbqdzmaqavpnjw0gvcagxi9b6vj3n1ynm0ps"
+   "1.1.0"
+   #:repository-url "https://github.com/tree-sitter-grammars/tree-sitter-kdl"))
 
 (define-public tree-sitter-ocaml
   (tree-sitter-grammar
@@ -511,6 +527,14 @@ which will be used as a snippet in origin."
      (git-version "0.0.1" revision commit)
      #:commit commit)))
 
+(define-public tree-sitter-ron
+  (tree-sitter-grammar
+   "ron" "RON"
+   "1la5v0nig3xp1z2v3sj36hb7wkkjch46dmxf457px7ly43x4cb83"
+   "0.2.0"
+   #:repository-url "https://github.com/tree-sitter-grammars/tree-sitter-ron"
+   #:license (list license:asl2.0 license:expat)))
+
 (define-public tree-sitter-ruby
   ;; There are a lot of additions, the last tag was placed more than 1 year ago
   (let ((commit "206c7077164372c596ffa8eaadb9435c28941364")
@@ -526,6 +550,18 @@ which will be used as a snippet in origin."
    "rust" "Rust"
    "1pk4mb3gh62xk0qlhxa8ihhxvnf7grrcchwg2xv99yy6yb3yh26b"
    "0.20.4"))
+
+(define-public tree-sitter-ungrammar
+  ;; No releases yet.
+  (let ((commit "debd26fed283d80456ebafa33a06957b0c52e451")
+        (revision "0"))
+    (tree-sitter-grammar
+     "ungrammar" "Ungrammar"
+     "09bbml1v1m6a9s9y9q1p2264ghf3fhb6kca1vj3qm19yq87xrnvy"
+     (git-version "0.0.2" revision commit)
+     #:commit commit
+     #:repository-url "https://github.com/tree-sitter-grammars/tree-sitter-ungrammar"
+     #:article "an")))
 
 (define-public tree-sitter-clojure
   (tree-sitter-grammar
@@ -556,6 +592,17 @@ which will be used as a snippet in origin."
    "0.7.1"
    #:repository-url "https://github.com/ikatyang/tree-sitter-markdown"))
 
+(define-public tree-sitter-matlab
+  (let ((commit "79d8b25f57b48f83ae1333aff6723b83c9532e37")
+        (revision "0"))
+    (tree-sitter-grammar
+     "matlab" "Matlab"
+     "04ffhfnznskkcp91fbnv8jy3wkb9cd8ifwrkrdwcw74n1b2hq80c"
+     (git-version "1.0.2" revision commit)
+     #:repository-url "https://github.com/acristoffers/tree-sitter-matlab"
+     #:commit commit
+     #:license license:expat)))
+
 (define-public tree-sitter-meson
   ;; tag 1.2 is Aug 24,2022  this commit is Feb 28,2023
   (let ((commit "3d6dfbdb2432603bc84ca7dc009bb39ed9a8a7b1")
@@ -567,6 +614,15 @@ which will be used as a snippet in origin."
      #:repository-url "https://github.com/Decodetalkers/tree-sitter-meson"
      #:commit commit
      #:license license:expat)))
+
+(define-public tree-sitter-nix
+  (tree-sitter-grammar
+   "nix" "Nix"
+   "0nn3ij8k6wkbf3kcvkyyp0vhfjcksi31wyyfwmsbx66maf2xgaii"
+   "0.0.0"
+   ;; The most recent commit at time of packaging, no tags.
+   #:commit "763168fa916a333a459434f1424b5d30645f015d"
+   #:repository-url "https://github.com/nix-community/tree-sitter-nix"))
 
 (define-public tree-sitter-org
   ;; There are a lot of additions, the last tag was placed a while ago
@@ -618,6 +674,13 @@ which will be used as a snippet in origin."
            (delete-file "binding.gyp")
            (delete-file-recursively "bindings"))))))
 
+(define-public tree-sitter-latex
+  (tree-sitter-grammar
+   "latex" "LaTeX"
+   "0lc42x604f04x3kkp88vyqa5dx90wqyisiwl7nn861lyxl6phjnf"
+   "0.3.0"
+   #:repository-url "https://github.com/latex-lsp/tree-sitter-latex"))
+
 (define-public tree-sitter-lua
   (tree-sitter-grammar
    "lua" "Lua"
@@ -630,3 +693,11 @@ which will be used as a snippet in origin."
    "scala" "Scala"
    "0hs6gmkq5cx9qrmgfz1mh0c34flwffc0k2mhwf13laawswnywfkz"
    "0.20.2"))
+
+(define-public tree-sitter-tlaplus
+  (tree-sitter-grammar
+   "tlaplus" "TLA+"
+   "1k60dnzafj6m9c2d4xnwiz3d7yw3bg3iwx7c1anhwr76iyxdci3w"
+   "1.0.8"
+   ;; Version 1.2.1 is most recent, but requires tree-sitter >0.21.0
+   #:repository-url "https://github.com/tlaplus-community/tree-sitter-tlaplus"))

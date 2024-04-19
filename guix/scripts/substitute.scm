@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2013-2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2013-2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014 Nikita Karetnikov <nikita@karetnikov.org>
 ;;; Copyright © 2018 Kyle Meyer <kyle@kyleam.com>
 ;;; Copyright © 2020 Christopher Baines <mail@cbaines.net>
@@ -452,7 +452,8 @@ server certificates."
 
 (define* (download-nar narinfo destination
                        #:key status-port
-                       deduplicate? print-build-trace?)
+                       deduplicate? print-build-trace?
+                       (fetch-timeout %fetch-timeout))
   "Download the nar prescribed in NARINFO, which is assumed to be authentic
 and authorized, and write it to DESTINATION.  When DEDUPLICATE? is true, and
 if DESTINATION is in the store, deduplicate its files.  Print a status line to
@@ -473,28 +474,38 @@ STATUS-PORT."
        (let ((port (open-file (uri-path uri) "r0b")))
          (values port (stat:size (stat port)))))
       ((http https)
-       ;; Test this with:
-       ;;   sudo tc qdisc add dev eth0 root netem delay 1500ms
-       ;; and then cancel with:
-       ;;   sudo tc qdisc del dev eth0 root
-       (with-timeout %fetch-timeout
-         (begin
-           (warning (G_ "while fetching ~a: server is somewhat slow~%")
-                    (uri->string uri))
-           (warning (G_ "try `--no-substitutes' if the problem persists~%")))
-         (with-cached-connection uri port
-           (http-fetch uri #:text? #f
-                       #:port port
-                       #:keep-alive? #t
-                       #:buffered? #f))))
+       (if fetch-timeout
+           ;; Test this with:
+           ;;   sudo tc qdisc add dev eth0 root netem delay 1500ms
+           ;; and then cancel with:
+           ;;   sudo tc qdisc del dev eth0 root
+           (with-timeout %fetch-timeout
+             (begin
+               (warning (G_ "while fetching ~a: server is somewhat slow~%")
+                        (uri->string uri))
+               (warning (G_ "try `--no-substitutes' if the problem persists~%")))
+             (with-cached-connection uri port
+               (http-fetch uri #:text? #f
+                           #:port port
+                           #:keep-alive? #t
+                           #:buffered? #f)))
+           (with-cached-connection uri port
+             (http-fetch uri #:text? #f
+                         #:port port
+                         #:keep-alive? #t
+                         #:buffered? #f))))
       (else
-       (leave (G_ "unsupported substitute URI scheme: ~a~%")
-              (uri->string uri)))))
+       (raise
+        (formatted-message
+         (G_ "unsupported substitute URI scheme: ~a~%")
+         (uri->string uri))))))
 
   (define (try-fetch choices)
     (match choices
       (((uri compression file-size) rest ...)
-       (guard (c ((and (pair? rest) (http-get-error? c))
+       (guard (c ((and (pair? rest)
+                       (or (http-get-error? c)
+                           (network-error? c)))
                   (warning (G_ "download from '~a' failed, trying next URL~%")
                            (uri->string uri))
                   (try-fetch rest)))
@@ -504,9 +515,11 @@ STATUS-PORT."
                      (G_ "Downloading ~a...~%") (uri->string uri)))
            (values port uri compression download-size))))
       (()
-       (leave (G_ "no valid nar URLs for ~a at ~a~%")
-              (narinfo-path narinfo)
-              (narinfo-uri-base narinfo)))))
+       (raise
+        (formatted-message
+         (G_ "no valid nar URLs for ~a at ~a~%")
+         (narinfo-path narinfo)
+         (narinfo-uri-base narinfo))))))
 
   ;; Delete DESTINATION first--necessary when starting over after a failed
   ;; download.
@@ -613,13 +626,7 @@ STATUS-PORT."
           (and (kind-and-args? exception)
                (memq (exception-kind exception)
                      '(gnutls-error getaddrinfo-error)))
-          (and (http-get-error? exception)
-               (begin
-                 (warning (G_ "download from '~a' failed: ~a, ~s~%")
-                          (uri->string (http-get-error-uri exception))
-                          (http-get-error-code exception)
-                          (http-get-error-reason exception))
-                 #t))))))
+          (http-get-error? exception)))))
 
 (define* (process-substitution/fallback port narinfo destination
                                         #:key cache-urls acl
@@ -647,7 +654,13 @@ way to download the nar."
           (if (or (equivalent-narinfo? narinfo alternate)
                   (valid-narinfo? alternate acl)
                   (%allow-unauthenticated-substitutes?))
-              (guard (c ((network-error? c) (loop rest)))
+              (guard (c ((network-error? c)
+                         (when (http-get-error? c)
+                           (warning (G_ "download from '~a' failed: ~a, ~s~%")
+                                    (uri->string (http-get-error-uri c))
+                                    (http-get-error-code c)
+                                    (http-get-error-reason c)))
+                         (loop rest)))
                 (download-nar alternate destination
                               #:status-port port
                               #:deduplicate? deduplicate?
@@ -671,10 +684,17 @@ PORT."
                         (cut valid-narinfo? <> acl))))
 
   (unless narinfo
-    (leave (G_ "no valid substitute for '~a'~%")
-           store-item))
+    (raise
+     (formatted-message
+      (G_ "no valid substitute for '~a'~%")
+      store-item)))
 
   (guard (c ((network-error? c)
+             (when (http-get-error? c)
+               (warning (G_ "download from '~a' failed: ~a, ~s~%")
+                        (uri->string (http-get-error-uri c))
+                        (http-get-error-code c)
+                        (http-get-error-reason c)))
              (format (current-error-port)
                      (G_ "retrying download of '~a' with other substitute URLs...~%")
                      store-item)
@@ -749,8 +769,8 @@ found."
     (#f
      ;; This can only happen when this script is not invoked by the
      ;; daemon.
-     '("http://ci.guix.gnu.org"
-       "http://bordeaux.guix.gnu.org"))))
+     '("http://bordeaux.guix.gnu.org"
+       "http://ci.guix.gnu.org"))))
 
 ;; In order to prevent using large number of discovered local substitute
 ;; servers, limit the local substitute urls list size.

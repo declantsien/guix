@@ -1,6 +1,6 @@
 ;;; GNU Guix --- Functional package management for GNU
 ;;; Copyright © 2017 John Darrington <jmd@gnu.org>
-;;; Copyright © 2017, 2019, 2022 Ricardo Wurmus <rekado@elephly.net>
+;;; Copyright © 2017, 2019, 2022, 2024 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2014, 2021-2023 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2014 Mark H Weaver <mhw@netris.org>
 ;;; Copyright © 2016 Eric Bavier <bavier@member.fsf.org>
@@ -52,6 +52,7 @@
   #:use-module (guix build-system python)
   #:use-module (gnu packages)
   #:use-module (gnu packages algebra)
+  #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages bison)
   #:use-module (gnu packages boost)
@@ -98,6 +99,7 @@
   #:use-module (gnu packages serialization)
   #:use-module (gnu packages sphinx)
   #:use-module (gnu packages sqlite)
+  #:use-module (gnu packages swig)
   #:use-module (gnu packages tbb)
   #:use-module (gnu packages textutils)
   #:use-module (gnu packages tls)
@@ -259,57 +261,36 @@ of external libraries that provide additional functionality.")
 (define-public opencolorio
   (package
     (name "opencolorio")
-    (version "1.1.1")
+    (version "2.3.2")
     (source
      (origin
        (method git-fetch)
        (uri (git-reference
              (url "https://github.com/AcademySoftwareFoundation/OpenColorIO")
              (commit (string-append "v" version))))
-       (patches (search-patches "opencolorio-fix-build-with-gcc11.patch"))
        (sha256
-        (base32 "12srvxca51czpfjl0gabpidj9n84mw78ivxy5w75qhq2mmc798sb"))
-       (file-name (git-file-name name version))
-       (modules '((guix build utils)))
-       (snippet
-        `(begin
-           ;; Remove bundled tarballs, patches, and .jars(!).  XXX: Upstream
-           ;; claims to have fixed USE_EXTERNAL_YAML, but it still fails with:
-           ;; https://github.com/AcademySoftwareFoundation/OpenColorIO/issues/517
-           ;; When removing it, also remove it from the licence field comment.
-           (for-each delete-file-recursively
-                     (filter
-                      (lambda (full-name)
-                        (let ((file (basename full-name)))
-                          (not (or (string-prefix? "yaml-cpp-0.3" file)
-                                   (string=? "unittest.h" file)))))
-                      (find-files "ext" ".*")))
-
-           #t))))
+        (base32 "1h33s2pfy28nj836kx6xx3iks7v38g3kx7c4f6zn1dpskl0zf809"))
+       (file-name (git-file-name name version))))
     (build-system cmake-build-system)
     (arguments
-     `(#:configure-flags
-       (list (string-append "-DCMAKE_CXX_FLAGS="
-                            "-Wno-error=deprecated-declarations "
-                            "-Wno-error=unused-function")
-             "-DOCIO_BUILD_STATIC=OFF"
-             ;; "-DUSE_EXTERNAL_YAML=ON"
-             "-DUSE_EXTERNAL_TINYXML=ON"
-             "-DUSE_EXTERNAL_LCMS=ON")
-       #:phases
-       (modify-phases %standard-phases
-         (add-after 'unpack 'patch-test-suite
-           (lambda _
-             (substitute* "src/core_tests/CMakeLists.txt"
-               (("/bin/sh") (which "bash")))
-             #t)))))
+     ;; XXX: GPU tests are failing.
+     (list #:configure-flags #~(list "-DOCIO_BUILD_GPU_TESTS=false")))
     (native-inputs
-     (list git pkg-config))
+     ;; XXX: OCIO has unit tests for OpenShadingLanguage, but they fail.
+     ;; They also require OIIO, but OCIO is an optional dependency to it.
+     (list pybind11-2.10 python-wrapper))
     (inputs
-     ;; XXX Adding freeglut, glew, ilmbase, mesa, and openimageio for
-     ;; ocioconvert fails: error: conflicting declaration ?typedef void
-     ;; (* PFNGLGETFRAGMENTMATERIALFVSGIXPROC)(GLenum, GLenum, GLfloat*)
-     (list lcms openexr-2 tinyxml))
+     (list expat
+           freeglut
+           glew
+           imath
+           lcms
+           libglvnd
+           minizip-ng
+           openexr
+           pystring
+           yaml-cpp
+           zlib))
     (home-page "https://opencolorio.org")
     (synopsis "Color management for visual effects and animation")
     (description
@@ -322,9 +303,7 @@ back-end configuration options suitable for high-end production usage.
 OCIO is compatible with the @acronym{ACES, Academy Color Encoding
 Specification} and is @acronym{LUT, look-up table}-format agnostic, supporting
 many popular formats.")
-    (license (list license:expat        ; docs/ociotheme/static, ext/yaml-cpp-*
-                   license:zlib         ; src/core/md5
-                   license:bsd-3))))    ; the rest
+    (license license:bsd-3)))
 
 (define-public vtk
   (package
@@ -495,7 +474,7 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
 (define-public opencv
   (package
     (name "opencv")
-    (version "4.8.1")
+    (version "4.9.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -520,7 +499,6 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
                                 "libjpeg"
                                 "libjpeg-turbo"
                                 "libpng"
-                                "libtengine"
                                 "libtiff"
                                 "libwebp"
                                 "openexr"
@@ -535,7 +513,7 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
                   (for-each delete-file (find-files "." "\\.jar$"))))
               (sha256
                (base32
-                "1alvfqacbmrn7s6rbx0r150fg0lmsg13s887gn289vdawgrd7k04"))))
+                "1s3d2bzf74biz18flb33533dfx3j31305ddh4gzgvg55hpr1zp55"))))
     (build-system cmake-build-system)
     (arguments
      `(#:configure-flags
@@ -718,7 +696,7 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
            (file-name (git-file-name "opencv_extra" version))
            (sha256
             (base32
-             "11y9b35j74gg4gqll4v366qmhvjkcqml45khiajd8zsk1fraf70l"))))
+             "1x095sgc0fkl8zzpxlswpnmxkf80cvzab1ddcq792dys5qm2s1x4"))))
        ("opencv-contrib"
         ,(origin
            (method git-fetch)
@@ -727,7 +705,7 @@ integrates with various databases on GUI toolkits such as Qt and Tk.")
            (file-name (git-file-name "opencv_contrib" version))
            (sha256
             (base32
-             "16crcca9r4y4rby0dqdhc06qi84hjk6qxy2sql2dhh35hfs856rr"))))))
+             "17xrvzllbcrprxn6c0g4x25i2wa7yqa0ycv177wah3if9s30dgib"))))))
     (inputs
      (list eigen
            ffmpeg-4
@@ -833,14 +811,14 @@ due to its architecture which automatically parallelises the image workflows.")
 (define-public gmic
   (package
     (name "gmic")
-    (version "3.3.3")
+    (version "3.3.5")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://gmic.eu/files/source/gmic_"
                            version ".tar.gz"))
        (sha256
-        (base32 "0pb474cdlxcp3m7gkxrfpnblag6r3wny7vih44gdyy2q8zb3ffch"))))
+        (base32 "06vcwn8c8zhr1j0jy79an1f6vvjh47ipm19a20g3qsnxv7h5c905"))))
     (build-system cmake-build-system)
     (arguments
      `(#:tests? #f ;there are no tests
@@ -866,7 +844,6 @@ due to its architecture which automatically parallelises the image workflows.")
            libpng
            libtiff
            libx11
-           ;;opencv ;OpenCV is currently broken in the CI
            openexr
            zlib))
     (home-page "https://gmic.eu/")
@@ -1320,24 +1297,42 @@ libraries designed for computer vision research and implementation.")
        (sha256
         (base32 "0bs63mk4q8jmx38f031jy5w5n9yy5ng9x8ijwinvjyvas8cichqi"))))
     (build-system cmake-build-system)
+    (outputs '("out" "python"))
     (arguments
-     (list #:tests? #f ; tests require network access and external data
-           #:configure-flags #~'("-DITK_USE_GPU=ON"
-                                 "-DITK_USE_SYSTEM_LIBRARIES=ON"
-                                 "-DITK_USE_SYSTEM_GOOGLETEST=ON"
-                                 "-DITK_BUILD_SHARED=ON"
-                                 ;; This prevents "GTest::GTest" from being added to the ITK_LIBRARIES
-                                 ;; variable in the installed CMake files.  This is necessary as other
-                                 ;; packages using insight-toolkit could not be configured otherwise.
-                                 "-DGTEST_ROOT=gtest"
-                                 "-DCMAKE_CXX_STANDARD=17")
+     (list #:tests? #f        ; tests require network access and external data
+           #:configure-flags
+           #~(list "-DITK_USE_GPU=ON"
+                   "-DITK_USE_SYSTEM_LIBRARIES=ON"
+                   "-DITK_USE_SYSTEM_GOOGLETEST=ON"
+                   "-DITK_USE_SYSTEM_CASTXML=ON"
+                   "-DITK_BUILD_SHARED=ON"
+                   "-DITK_WRAPPING=ON"
+                   "-DITK_WRAP_PYTHON=ON"
+                   "-DITK_DYNAMIC_LOADING=ON"
+                   (let* ((python-version
+                           #$(version-major+minor
+                              (package-version (this-package-input "python"))))
+                          (python-lib-path
+                           (string-append #$output:python
+                                          "/lib/python" python-version
+                                          "/site-packages")))
+                     (string-append "-DPY_SITE_PACKAGES_PATH=" python-lib-path))
+                   ;; This prevents "GTest::GTest" from being added to the ITK_LIBRARIES
+                   ;; variable in the installed CMake files.  This is necessary as other
+                   ;; packages using insight-toolkit could not be configured otherwise.
+                   "-DGTEST_ROOT=gtest"
+                   "-DCMAKE_CXX_STANDARD=17")
 
            #:phases #~(modify-phases %standard-phases
                         (add-after 'unpack 'do-not-tune
                           (lambda _
                             (substitute* "CMake/ITKSetStandardCompilerFlags.cmake"
                               (("-mtune=native")
-                               "")))))))
+                               ""))))
+                        (add-after 'unpack 'ignore-warnings
+                          (lambda _
+                            (substitute* "Wrapping/Generators/Python/CMakeLists.txt"
+                              (("-Werror") "")))))))
     (inputs
      (list eigen
            expat
@@ -1354,7 +1349,7 @@ libraries designed for computer vision research and implementation.")
            vxl-1
            zlib))
     (native-inputs
-     (list googletest pkg-config))
+     (list castxml googletest pkg-config swig which))
 
     ;; The 'CMake/ITKSetStandardCompilerFlags.cmake' file normally sets
     ;; '-mtune=native -march=corei7', suggesting there's something to be
@@ -1384,13 +1379,16 @@ combine the information contained in both.")
                            version ".tar.xz"))
        (sha256
         (base32 "19cgfpd63gqrvc3m27m394gy2d7w79g5y6lvznb5qqr49lihbgns"))))
+    (outputs '("out"))
     (arguments
-     (list #:tests? #f ; tests require network access and external data
+     (list #:tests? #f        ; tests require network access and external data
            #:configure-flags #~'("-DITKV3_COMPATIBILITY=ON" ; needed for itk-snap
                                  "-DITK_USE_GPU=ON"
                                  "-DITK_USE_SYSTEM_LIBRARIES=ON"
                                  "-DITK_USE_SYSTEM_GOOGLETEST=ON"
-                                 "-DITK_USE_SYSTEM_VXL=ON")))))
+                                 "-DITK_USE_SYSTEM_VXL=ON")))
+    (native-inputs
+     (list googletest pkg-config))))
 
 (define-public insight-toolkit-4.12
   (package (inherit insight-toolkit-4)

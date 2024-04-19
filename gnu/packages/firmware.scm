@@ -37,6 +37,7 @@
   #:use-module (guix utils)
   #:use-module (guix git-download)
   #:use-module (guix build-system copy)
+  #:use-module (guix build-system cmake)
   #:use-module (guix build-system gnu)
   #:use-module (guix build-system meson)
   #:use-module (guix build-system python)
@@ -91,67 +92,64 @@
   #:export (make-ergodox-firmware
             make-qmk-firmware))
 
-(define-public ath9k-htc-firmware
+(define-public ath9k-htc-ar7010-firmware
   (package
-    (name "ath9k-htc-firmware")
+    (name "ath9k-htc-ar7010-firmware")
     (version "1.4.0")
     (source (origin
               (method git-fetch)
               (uri (git-reference
                     (url "https://github.com/qca/open-ath9k-htc-firmware")
                     (commit version)))
+              (modules '((guix build utils)))
+              (snippet
+                ;; Delete binary blobs.
+                #~(for-each delete-file (find-files "." "\\.(a|o)$")))
               (sha256
                (base32
                 "16jbj8avg5jkgvq5lxm0hdxxn4c3zn7fx8b4nxllvr024apk9w23"))
-              (file-name (git-file-name name version))
-              (patches (search-patches "ath9k-htc-firmware-objcopy.patch"
-                                       "ath9k-htc-firmware-gcc-compat.patch"))))
-    (build-system gnu-build-system)
+              (file-name (git-file-name "open-ath9k-htc-firmware" version))
+              (patches (search-patches "ath9k-htc-firmware-gcc-compat.patch"))))
+    (build-system cmake-build-system)
     (arguments
-     '(#:target #f                          ; Package produces firmware.
-       #:phases
-       (modify-phases %standard-phases
-         (add-before 'configure 'pre-configure
-           (lambda* (#:key inputs native-inputs #:allow-other-keys)
-             (chdir "target_firmware")
-
-             ;; 'configure' is a simple script that runs 'cmake' with
-             ;; the right flags.
-             (substitute* "configure"
-               (("^TOOLCHAIN=.*$")
-                (string-append "TOOLCHAIN="
-                               (assoc-ref (or native-inputs inputs) "cross-gcc")
-                               "\n")))
-             #t))
-         (replace 'install
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let* ((out    (assoc-ref outputs "out"))
-                    (fw-dir (string-append out "/lib/firmware")))
-               (for-each (lambda (file)
-                           (install-file file fw-dir))
-                         (find-files "." "\\.fw$"))
-              #t))))
-       #:tests? #f))
-
-    ;; The firmware is cross-compiled using a "bare bones" compiler (no libc.)
-    ;; Use our own tool chain for that.
-    (native-inputs `(("cross-gcc" ,(cross-gcc
-                                    "xtensa-elf"
-                                    #:xbinutils (cross-binutils
-                                                 "xtensa-elf"
-                                                 #:binutils binutils-2.33)))
-                     ("cross-binutils" ,(cross-binutils
-                                         "xtensa-elf"
-                                         #:binutils binutils-2.33))
-                     ("cmake" ,cmake-minimal)
-                     ("perl" ,perl)))
+     (list #:target "xtensa-ath9k-elf"
+           #:tests? #f
+           #:configure-flags
+           #~'("-DCMAKE_SYSTEM_NAME=Generic"      ;override default value
+               "-DTARGET_MAGPIE=ON")
+           #:phases
+           #~(modify-phases %standard-phases
+               (add-before 'configure 'change-directory
+                 (lambda _
+                   (chdir "target_firmware")))
+               (replace 'install
+                 (lambda _
+                   (let ((fw-dir (string-append #$output "/lib/firmware")))
+                     (for-each (lambda (file)
+                                 (install-file file fw-dir))
+                               (find-files "." "\\.fw$"))))))))
+    (native-inputs (list perl))
     (home-page "https://wireless.wiki.kernel.org/en/users/Drivers/ath9k_htc")
-    (synopsis "Firmware for the Atheros AR7010 and AR9271 USB 802.11n NICs")
+    (synopsis "Firmware for the Atheros AR7010 USB 802.11n NICs")
     (description
-     "This is the firmware for the Qualcomm Atheros AR7010 and AR9271 USB
-802.11n NICs (aka Wi-Fi USB dongles).  It is used by the ath9k driver of
-Linux-libre.")
+     "This is the firmware for the Qualcomm Atheros AR7010 802.11n USB NICs
+(aka Wi-Fi USB dongle).  It is used by the ath9k driver of Linux-libre.")
     (license (license:non-copyleft "http://directory.fsf.org/wiki/License:ClearBSD"))))
+
+(define-public ath9k-htc-ar9271-firmware
+  (package
+    (inherit ath9k-htc-ar7010-firmware)
+    (name "ath9k-htc-ar9271-firmware")
+    (arguments
+     (substitute-keyword-arguments
+       (package-arguments ath9k-htc-ar7010-firmware)
+       ((#:configure-flags flags)
+        #~'("-DCMAKE_SYSTEM_NAME=Generic"         ;override default value
+            "-DTARGET_K2=ON"))))
+    (synopsis "Firmware for the Atheros AR9271 USB 802.11n NICs")
+    (description
+     "This is the firmware for the Qualcomm Atheros AR9271 802.11n USB NICs
+(aka Wi-Fi USB dongle).  It is used by the ath9k driver of Linux-libre.")))
 
 (define-public b43-tools
   (let ((commit "27892ef741e7f1d08cb939744f8b8f5dac7b04ae")
@@ -1504,14 +1502,16 @@ having to run @command{qmk} as root when flashing the firmware.")
 (define* (make-qmk-firmware/implementation keyboard keymap
                                            #:key (description "")
                                            keymap-json
-                                           keymap-source-directory)
+                                           keymap-source-directory
+                                           keyboard-source-directory)
   "Return a package to build the QMK firmware for KEYBOARD with KEYMAP.
-Keyboard should be the name of a sub-directory under the @file{keyboards}
-directory.  For custom keymaps, KEYMAP-JSON, a file-like object of a JSON
-representation of KEYMAP as generated by the @url{https://config.qmk.fm/, QMK
-Configurator} tool or KEYMAP-SOURCE-DIRECTORY, a file-like object directory
-containing the keymap source files files such as @file{keymap.c}, can be
-provided."
+Keyboard should be the name of a sub-directory under the @file{keyboards} directory.
+For custom keymaps, KEYMAP-JSON, a file-like object of a JSON representation of
+KEYMAP as generated by the @url{https://config.qmk.fm/, QMK Configurator} tool or
+KEYMAP-SOURCE-DIRECTORY, a file-like object directory containing the keymap source
+files files such as @file{keymap.c}, can be provided.  For keyboards not available in
+upstream repository, provide a file-like object directory containing the whole
+keyboard definition in KEYBOARD-SOURCE-DIRECTORY."
   (package
     (name (string-append "qmk-firmware-"
                          (string-replace-substring keyboard "_" "-") "-"
@@ -1571,6 +1571,15 @@ provided."
                       (base32
                        "1rmhm4rxvq8skxqn6vc4n4ly1ak6whj7c386zbsci4pxx548n9h4"))))
                "lib/lufa")))
+          #$@(if keyboard-source-directory
+                 #~((add-after 'unpack 'copy-keyboard-source-directory
+                      (lambda _
+                        (let ((keyboard-dir #$(string-append "keyboards/" keyboard)))
+                          (false-if-exception (delete-file-recursively
+                                               keyboard-dir))
+                          (copy-recursively #$keyboard-source-directory
+                                            keyboard-dir)))))
+                 #~())
           #$@(if keymap-source-directory
                  #~((add-after 'unpack 'copy-keymap-source-directory
                       (lambda _

@@ -6,7 +6,7 @@
 ;;; Copyright © 2015 Eric Dvorsak <eric@dvorsak.fr>
 ;;; Copyright © 2016 Mathieu Lirzin <mthl@gnu.org>
 ;;; Copyright © 2015 Cyrill Schenkel <cyrill.schenkel@gmail.com>
-;;; Copyright © 2016, 2017, 2019-2023 Efraim Flashner <efraim@flashner.co.il>
+;;; Copyright © 2016, 2017, 2019-2024 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2016 Nikita <nikita@n0.is>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016 David Craven <david@craven.ch>
@@ -37,7 +37,7 @@
 ;;; Copyright © 2022 Petr Hodina <phodina@protonmail.com>
 ;;; Copyright © 2023 Zheng Junjie <873216071@qq.com>
 ;;; Copyright © 2023 Janneke Nieuwenhuizen <janneke@gnu.org>
-;;; Copyright © 2023 John Kehayias <john.kehayias@protonmail.com>
+;;; Copyright © 2023, 2024 John Kehayias <john.kehayias@protonmail.com>
 ;;; Copyright © 2023, 2024 Kaelyn Takata <kaelyn.alexi@protonmail.com>
 ;;;
 ;;; This file is part of GNU Guix.
@@ -5019,7 +5019,7 @@ by the Xorg server.")
 (define-public xorg-server
   (package
     (name "xorg-server")
-    (version "21.1.11")
+    (version "21.1.12")
     (source
      (origin
        (method url-fetch)
@@ -5027,7 +5027,7 @@ by the Xorg server.")
                            "/xserver/xorg-server-" version ".tar.xz"))
        (sha256
         (base32
-         "1vr6sc38sqipazsm61bcym2ggbgfgaamz7wf05mb31pvayyssg8x"))
+         "03x954bygi6sdynk5yy3yvsfhg6i9gjhisn3x9jxvk5mw4mnw08y"))
        (patches
         (list
          ;; See:
@@ -5275,7 +5275,7 @@ EGLStream families of extensions.")
 (define-public xorg-server-xwayland
   (package
     (name "xorg-server-xwayland")
-    (version "23.2.4")
+    (version "23.2.5")
     (source
      (origin
        (method url-fetch)
@@ -5283,7 +5283,7 @@ EGLStream families of extensions.")
                            "/xserver/xwayland-" version ".tar.xz"))
        (sha256
         (base32
-         "0sxlh43cnpf56p2p5jnhp7427knfpy42mcka7f5hjcqddndib7m9"))))
+         "145xykwmyqkaa8zrbn5fnvnff67iral9mc5raamglnbsd3r7zv1k"))))
     (inputs (list font-dejavu
                   dbus
                   egl-wayland
@@ -5960,7 +5960,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
 (define-public xterm
   (package
     (name "xterm")
-    (version "384")
+    (version "390")
     (source
      (origin
        (method url-fetch)
@@ -5970,7 +5970,7 @@ to answer a question.  Xmessage can also exit after a specified time.")
              (string-append "ftp://ftp.invisible-island.net/xterm/"
                             "xterm-" version ".tgz")))
        (sha256
-        (base32 "0wy3rdj5smis44nsy6iccx3gsyzlqw0rcjjb7h605bnf803qgvri"))
+        (base32 "03wwdwnpj5dg1ah5sfp00ppzawjd81lnw47g4p20jjhpqly7q4bm"))
        (patches
          (search-patches "xterm-370-explicit-xcursor.patch"))))
     (build-system gnu-build-system)
@@ -6158,14 +6158,14 @@ basic eye-candy effects.")
 (define-public xpra
   (package
     (name "xpra")
-    (version "5.0.7")
+    (version "5.0.8")
     (source
      (origin
        (method url-fetch)
        (uri (string-append "https://www.xpra.org/src/xpra-"
                            version ".tar.xz"))
        (sha256
-        (base32 "0rkcsv0b55xbvkqi38nm01yxc09f7l9nj7xnp8v23rn6bp86m8mr"))
+        (base32 "0ml9nv6gwrqgyrn3hp5kkxsbdl5fpz5w8vjsvn0qfdsgbvq617wy"))
        (patches (search-patches "xpra-5.0-systemd-run.patch"
                                 "xpra-5.0-install_libs.patch"))))
     (build-system python-build-system)
@@ -6317,7 +6317,6 @@ X11 servers, Windows, or macOS.")
                            (guix build emacs-utils))
        #:configure-flags
        (list "--with-anthy-utf8"
-             (string-append "--with-lispdir=" %output "/share/emacs")
              ;; Set proper runpath
              (string-append "LDFLAGS=-Wl,-rpath=" %output "/lib")
              "CFLAGS=-O2 -g -fcommon")
@@ -6331,21 +6330,11 @@ X11 servers, Windows, or macOS.")
                  ("uim-el-agent" (string-append out "/bin/uim-el-agent"))
                  ("uim-el-helper-agent" (string-append out "/bin/uim-el-helper-agent"))))
              #t))
-         ;; Fix installation path by renaming share/emacs/uim-el to
-         ;; share/emacs/site-lisp
-         (add-after 'install 'fix-install-path
-           (lambda* (#:key outputs #:allow-other-keys)
-             (let ((share-emacs (string-append (assoc-ref outputs "out")
-                                               "/share/emacs")))
-               (rename-file (string-append share-emacs "/uim-el")
-                            (string-append share-emacs "/site-lisp")))
-             #t))
-         ;; Generate emacs autoloads for uim.el
          (add-after 'fix-install-path 'make-autoloads
            (lambda* (#:key outputs #:allow-other-keys)
              (emacs-generate-autoloads
               ,name (string-append (assoc-ref outputs "out")
-                                   "/share/emacs/site-lisp"))
+                                   "/share/emacs/site-lisp/uim-el"))
              #t)))))
     (home-page "https://github.com/uim/uim")
     (synopsis "Multilingual input method framework")

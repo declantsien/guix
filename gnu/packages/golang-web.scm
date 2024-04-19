@@ -1,4 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
+;;; Copyright © 2017, 2019, 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2018 Pierre Neidhardt <mail@ambrevar.xyz>
 ;;; Copyright © 2018 Pierre-Antoine Rouby <pierre-antoine.rouby@inria.fr>
 ;;; Copyright © 2020 Jack Hill <jackhill@jackhill.us>
@@ -10,7 +11,6 @@
 ;;; Copyright © 2020 raingloom <raingloom@riseup.net>
 ;;; Copyright © 2020-2022 Efraim Flashner <efraim@flashner.co.il>
 ;;; Copyright © 2021 Collin J. Doering <collin@rekahsoft.ca>
-;;; Copyright © 2021 Leo Famulari <leo@famulari.name>
 ;;; Copyright © 2021 Philip McGrath <philip@philipmcgrath.com>
 ;;; Copyright © 2021 Raghav Gururajan <rg@raghavgururajan.name>
 ;;; Copyright © 2021 Sarah Morgensen <iskarian@mgsn.dev>
@@ -19,6 +19,7 @@
 ;;; Copyright © 2022 jgart via Guix-patches via <guix-patches@gnu.org>
 ;;; Copyright © 2022 muradm <mail@muradm.net>
 ;;; Copyright © 2022, 2023 Sharlatan Hellseher <sharlatanus@gmail.com>
+;;; Copyright © 2023 Fries <fries1234@protonmail.com>
 ;;; Copyright © 2023 Hilton Chain <hako@ultrarare.space>
 ;;; Copyright © 2023 Katherine Cox-Buday <cox.katherine.e@gmail.com>
 ;;; Copyright © 2023 Nicolas Graves <ngraves@ngraves.fr>
@@ -552,6 +553,8 @@ metrics (i.e. response time, bytes written, and http status code) from your
 application's http.Handlers.")
     (license license:expat)))
 
+;; This project looks like domain or abandoned, see
+;; <https://github.com/francoispqt/gojay/issues/150>.
 (define-public go-github-com-francoispqt-gojay
   (package
     (name "go-github-com-francoispqt-gojay")
@@ -567,14 +570,20 @@ application's http.Handlers.")
         (base32 "1ix95qdyajfmxhf9y52vjrih63f181pjs4v5as8905s4d5vmkd06"))))
     (build-system go-build-system)
     (arguments
-     '(#:import-path "github.com/francoispqt/gojay"))
+     (list
+      ;; XXX: Disable failing tests on non-x86-64 architecture, see
+      ;; <https://github.com/francoispqt/gojay/issues/173>.
+      #:tests? (and (not (%current-target-system))
+                    (target-x86-64?))
+      #:import-path "github.com/francoispqt/gojay"))
     (native-inputs
      (list go-github-com-stretchr-testify))
-    (synopsis "JSON encoder/decoder with powerful stream API for Golang")
-    (description "GoJay is a performant JSON encoder/decoder for Golang.  It has
-a simple API and doesn't use reflection.  It relies on small interfaces to
-decode/encode structures and slices.")
     (home-page "https://github.com/francoispqt/gojay")
+    (synopsis "JSON encoder/decoder with powerful stream API for Golang")
+    (description
+     "GoJay is a performant JSON encoder/decoder for Golang.  It has a simple
+API and doesn't use reflection.  It relies on small interfaces to
+decode/encode structures and slices.")
     (license license:expat)))
 
 ;; TODO: This repository has been archived by the owner on Aug 30, 2023. It is
@@ -706,6 +715,35 @@ Encryption, JSON Web Signature, and JSON Web Token standards.")
     (description
      "Fast JSON encoder/decoder compatible with encoding/json for Go.")
     (license license:expat)))
+
+(define-public go-github-com-golang-groupcache
+  (let ((commit "41bb18bfe9da5321badc438f91158cd790a33aa3")
+        (revision "3"))
+    (package
+      (name "go-github-com-golang-groupcache")
+      (version (git-version "0.0.0" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/golang/groupcache")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "07amgr8ji4mnq91qbsw2jlcmw6hqiwdf4kzfdrj8c4b05w4knszc"))))
+      (build-system go-build-system)
+      (arguments
+       (list #:import-path "github.com/golang/groupcache"))
+      (propagated-inputs
+       (list go-github-com-golang-protobuf-proto))
+      (home-page "https://github.com/golang/groupcache")
+      (synopsis "Groupcache is a caching and cache-filling library")
+      (description
+       "Groupcache is a caching and cache-filling library, intended
+as a replacement for memcached in many cases.  It provides a data loading
+mechanism with caching and de-duplication that works across a set of peer
+processes.")
+      (license license:asl2.0))))
 
 (define-public go-github-com-google-go-github
   (package
@@ -1188,6 +1226,40 @@ Microsoft AD PAC authorization data.")
 transforms one JSON document into another through a JMESPath expression.")
     (license license:asl2.0)))
 
+(define-public go-github-com-json-iterator-go
+  (package
+    (name "go-github-com-json-iterator-go")
+    (version "1.1.12")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/json-iterator/go")
+             (commit (string-append "v" version))))
+       (file-name (git-file-name name version))
+       (sha256
+        (base32 "1c8f0hxm18wivx31bs615x3vxs2j3ba0v6vxchsjhldc8kl311bz"))))
+    (build-system go-build-system)
+    (arguments
+     (list #:import-path "github.com/json-iterator/go"))
+    (native-inputs
+     (list go-github-com-davecgh-go-spew
+           go-github-com-google-gofuzz
+           go-github-com-stretchr-testify))
+    (propagated-inputs
+     (list go-github-com-modern-go-concurrent
+           go-github-com-modern-go-reflect2))
+    (home-page "https://github.com/json-iterator/go")
+    (synopsis "High-performance replacement for Golang @code{encoding/json}")
+    (description
+     "This package implements encoding and decoding of JSON as defined in
+@uref{https://rfc-editor.org/rfc/rfc4627.html,RFC 4627} and provides
+interfaces with identical syntax of standard lib encoding/json.  Converting
+from encoding/json to jsoniter is no more than replacing the package with
+jsoniter and variable type declarations (if any).  jsoniter interfaces gives
+100% compatibility with code using standard lib.")
+    (license license:expat)))
+
 (define-public go-github-com-julienschmidt-httprouter
   (package
     (name "go-github-com-julienschmidt-httprouter")
@@ -1257,14 +1329,8 @@ router.")
       (arguments
        (list
         #:import-path "github.com/multiformats/go-multiaddr"))
-      (native-inputs
-       (list go-github-com-gxed-hashland-keccakpg
-             go-github-com-minio-blake2b-simd
-             go-github-com-minio-sha256-simd
-             go-github-com-mr-tron-base58
-             go-github-com-multiformats-go-multihash
-             go-github-com-spaolacci-murmur3
-             go-golang-org-x-crypto))
+      (propagated-inputs
+       (list go-github-com-multiformats-go-multihash))
       (home-page "https://github.com/multiformats/go-multiaddr")
       (synopsis "Composable and future-proof network addresses")
       (description
@@ -1305,15 +1371,8 @@ following:
         ;; TODO: Tests fail because they try to access the network.
         #:tests? #f
         #:import-path "github.com/multiformats/go-multiaddr-net"))
-      (native-inputs
-       (list go-github-com-gxed-hashland-keccakpg
-             go-github-com-minio-blake2b-simd
-             go-github-com-minio-sha256-simd
-             go-github-com-mr-tron-base58
-             go-github-com-multiformats-go-multiaddr
-             go-github-com-multiformats-go-multihash
-             go-github-com-spaolacci-murmur3
-             go-golang-org-x-crypto))
+      (propagated-inputs
+       (list go-github-com-multiformats-go-multiaddr))
       (home-page "https://github.com/multiformats/go-multiaddr-net")
       (synopsis "Multiaddress net tools")
       (description

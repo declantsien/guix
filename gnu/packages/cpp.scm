@@ -10,7 +10,7 @@
 ;;; Copyright © 2020 Roel Janssen <roel@gnu.org>
 ;;; Copyright © 2020, 2021, 2023, 2024 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2020 Brice Waegeneire <brice@waegenei.re>
-;;; Copyright © 2020, 2021, 2022 Vinicius Monego <monego@posteo.net>
+;;; Copyright © 2020, 2021, 2022, 2024 Vinicius Monego <monego@posteo.net>
 ;;; Copyright © 2020, 2022 Marius Bakke <marius@gnu.org>
 ;;; Copyright © 2020 Michael Rohleder <mike@rohleder.de>
 ;;; Copyright © 2020 Alexandros Theodotou <alex@zrythm.org>
@@ -39,6 +39,7 @@
 ;;; Copyright © 2023 Denis 'GNUtoo' Carikli <GNUtoo@cyberdimension.org>
 ;;; Copyright © 2023 Foundation Devices, Inc. <hello@foundationdevices.com>
 ;;; Copyright © 2023 Paul A. Patience <paul@apatience.com>
+;;; Copyright © 2024 dan <i@dan.games>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -91,6 +92,7 @@
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages libevent)
+  #:use-module (gnu packages libffi)
   #:use-module (gnu packages libunwind)
   #:use-module (gnu packages linux)
   #:use-module (gnu packages llvm)
@@ -183,6 +185,37 @@ code is generated or executed.  It also provides an optional register
 allocator that makes it easy to generate complex code without a significant
 development effort.")
       (license license:zlib))))
+
+(define-public castxml
+  (package
+    (name "castxml")
+    (version "0.6.4")
+    (source (origin
+              (method git-fetch)
+              (uri
+               (git-reference
+                (url "https://github.com/CastXML/CastXML")
+                (commit (string-append "v" version))))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32 "0l5ys9zmllfgwhjrm897akbsf38iswfcarhxg27xfhiy0bmzcwsg"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list
+      #:configure-flags
+      #~(list
+         (string-append "-DCLANG_RESOURCE_DIR="
+                        #$(this-package-native-input "clang") "/lib/clang/"
+                        #$(version-major
+                           (package-version (this-package-native-input "clang")))))))
+    (inputs (list libffi))
+    (native-inputs (list clang-17 llvm-17))
+    (home-page "https://github.com/CastXML/CastXML")
+    (synopsis "C-family abstract syntax tree XML output")
+    (description "CastXML is a C-family abstract syntax tree XML output tool.
+This project is maintained by Kitware in support of ITK, the Insight
+Segmentation and Registration Toolkit.")
+    (license license:asl2.0)))
 
 (define-public range-v3
   (package
@@ -444,6 +477,44 @@ the name of the library itself, which is written in C++.")
  APIs on top of Standard Template Library (@dfn{STL}) classes.")
       (license (list license:expat        ; cJSON
                      license:bsd-4)))))   ; everything else (LICENSE.txt)
+
+(define-public pystring
+  (package
+    (name "pystring")
+    (version "1.1.4")
+    (source
+     (origin
+       (method git-fetch)
+       (uri (git-reference
+             (url "https://github.com/imageworks/pystring")
+             (commit (string-append "v" version))))
+       (sha256
+        (base32 "0h12x24skrlx4fv0k5vl8wnar8gi6bq091yp93awkwsbnm8qwkzd"))
+       (file-name (git-file-name name version))))
+    (build-system cmake-build-system)
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+               ;; The install phase doesn't install the header
+               (add-after 'install 'install-header
+                 (lambda _
+                   (mkdir-p (string-append #$output "/include"))
+                   (copy-file
+                    (string-append #$(package-source this-package)
+                                   "/pystring.h")
+                    (string-append #$output
+                                   "/include/pystring.h")))))))
+    (native-inputs (list pkg-config))
+    (home-page "https://github.com/imageworks/pystring")
+    (synopsis "C++ functions matching the Python string methods")
+    (description
+     "Pystring is a collection of C++ functions which match the interface and
+behavior of Python's string class methods using std::string.  Implemented in
+C++, it does not require or make use of a python interpreter.  It provides
+convenience and familiarity for common string operations not included in the
+standard C++ library.  It's also useful in environments where both C++ and
+Python are used.")
+    (license license:bsd-3)))
 
 (define-public dashel
   (package
@@ -892,6 +963,49 @@ concurrent queue for C++11.")
 lock-free fixed size queue written in C++11.")
     (license license:expat)))
 
+(define-public syscmdline
+  (package
+    (name "syscmdline")
+    (version "0.0.1.4")
+    (source (origin
+              (method git-fetch)
+              (uri (git-reference
+                    (url "https://github.com/SineStriker/syscmdline")
+                    (commit version)))
+              (file-name (git-file-name name version))
+              (sha256
+               (base32
+                "00n9vkyymp1dzixxl93f6pkpd3ndsk1vib7shhlxv4zvy5hjqhqw"))))
+    (build-system cmake-build-system)
+    (arguments
+     (list #:configure-flags
+           #~(list "-DSYSCMDLINE_BUILD_STATIC=OFF" ;build a shared library
+                   "-DSYSCMDLINE_BUILD_TESTS=ON")
+           #:phases #~(modify-phases %standard-phases
+                        (replace 'check
+                          ;; There isn't currently any exposed test target.
+                          (lambda* (#:key tests? #:allow-other-keys)
+                            (when tests?
+                              (invoke "bin/tst_basic")))))))
+    (home-page "https://github.com/SineStriker/syscmdline")
+    (synopsis "C++ advanced command line parser")
+    (description "SysCmdLine is a C++ command line parser that is inspired by
+@code{QCommandLineParser} from Qt and @code{System.CommandLine} from C#.  It
+has features such as:
+@itemize
+@item Support sub-commands
+@item Support case-insensitive parsing
+@item Support global options
+@item Support mutually exclusive options
+@item Support short options and group flags
+@item Support help text customization
+@item Support localization
+@item Simple tips for typo correction
+@item Highly configurable
+@item Friendly interface
+@end itemize")
+    (license license:expat)))
+
 (define-public gperftools
   (package
     (name "gperftools")
@@ -1086,7 +1200,7 @@ code and retrieving their output.")
 (define-public sobjectizer
   (package
     (name "sobjectizer")
-    (version "5.7.2.6")
+    (version "5.8.2")
     (source
      (origin
        (method git-fetch)
@@ -1094,7 +1208,7 @@ code and retrieving their output.")
              (url "https://github.com/Stiffstream/sobjectizer")
              (commit (string-append "v." version))))
        (sha256
-        (base32 "0n6smpjkkkw0xab8wcpy3p0dpw2v9sxgwl6azl3am6abmv4mff12"))
+        (base32 "0ya5xlgm3arvzvcnsajw03kc3cibbdbap9p7kgpxn00byqbxixr7"))
        (file-name (git-file-name name version))))
     (build-system cmake-build-system)
     (arguments
@@ -1103,8 +1217,7 @@ code and retrieving their output.")
        (modify-phases %standard-phases
          (add-after 'unpack 'change-directory
            (lambda _
-             (chdir "dev")
-             #t)))))
+             (chdir "dev"))))))
     (home-page "https://stiffstream.com/en/products/sobjectizer.html")
     (synopsis "Cross-platform actor framework for C++")
     (description
@@ -1139,7 +1252,7 @@ programs.")
 (define-public kokkos
   (package
     (name "kokkos")
-    (version "4.1.00")
+    (version "4.2.01")
     (source
      (origin
        (method git-fetch)
@@ -1148,7 +1261,7 @@ programs.")
              (commit version)))
        (file-name (git-file-name name version))
        (sha256
-        (base32 "15kjpa54ssrrbid9h2nr94nh85qna5c4vq2152i4iy7gaagigy3c"))
+        (base32 "1bvxcy11as38ng9vdp93mrdvm7sgwqjrm67p53wr1aj7x3pq3hbp"))
        (modules '((guix build utils)))
        (snippet
         ;; Remove bundled googletest.
@@ -1763,7 +1876,7 @@ queues header library based on circular buffer with @code{std::atomic}.")
 (define-public magic-enum
   (package
     (name "magic-enum")
-    (version "0.7.3")
+    (version "0.9.5")
     (home-page "https://github.com/Neargye/magic_enum")
     (source (origin
               (method git-fetch)
@@ -1773,7 +1886,7 @@ queues header library based on circular buffer with @code{std::atomic}.")
               (file-name (git-file-name name version))
               (sha256
                (base32
-                "1x47radgsifgz3vn2561mlvf4cq46ii33cpyqf01znm56iirwq89"))))
+                "14ys5sn2v1mai8bclvi81cp65g6jblqpdsi94639hphca5v8gka3"))))
     (build-system cmake-build-system)
     (synopsis "C++17 header only library for compile time reflection of enums")
     (description "Magic Enum offers static reflection of enums, with

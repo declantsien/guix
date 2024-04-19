@@ -1,5 +1,5 @@
 ;;; GNU Guix --- Functional package management for GNU
-;;; Copyright © 2014-2023 Ludovic Courtès <ludo@gnu.org>
+;;; Copyright © 2014-2024 Ludovic Courtès <ludo@gnu.org>
 ;;; Copyright © 2016 Alex Kost <alezost@gmail.com>
 ;;; Copyright © 2016, 2017, 2018 Chris Marusich <cmmarusich@gmail.com>
 ;;; Copyright © 2017, 2019 Mathieu Othacehe <m.othacehe@gmail.com>
@@ -35,9 +35,9 @@
   #:use-module (guix store)
   #:autoload   (guix base16) (bytevector->base16-string)
   #:autoload   (guix store database)
-               (sqlite-register store-database-file call-with-database)
+               (register-valid-path store-database-file call-with-database)
   #:autoload   (guix build store-copy) (copy-store-item)
-  #:use-module (guix describe)
+  #:autoload   (guix describe) (current-profile)
   #:use-module (guix gexp)
   #:use-module (guix derivations)
   #:use-module (guix diagnostics)
@@ -47,7 +47,10 @@
   #:use-module (guix records)
   #:use-module (guix profiles)
   #:use-module (guix scripts)
-  #:use-module (guix channels)
+  #:autoload   (guix channels) (channel-name
+                                channel-url
+                                channel-branch
+                                channel-commit)
   #:use-module (guix scripts build)
   #:autoload   (guix scripts package) (delete-generations
                                        delete-matching-generations
@@ -57,7 +60,8 @@
                              graph-backend-name lookup-backend)
   #:use-module (guix scripts system reconfigure)
   #:use-module (guix build utils)
-  #:use-module (guix progress)
+  #:autoload   (guix progress) (progress-reporter/bar
+                                call-with-progress-reporter)
   #:use-module ((guix docker) #:select (%docker-image-max-layers))
   #:use-module (gnu build image)
   #:use-module (gnu build install)
@@ -158,14 +162,15 @@ given INFO, a <path-info> record."
     (copy-store-item item target
                      #:deduplicate? #t)
 
-    (sqlite-register db
-                     #:path item
-                     #:references (path-info-references info)
-                     #:deriver (path-info-deriver info)
-                     #:hash (string-append
-                             "sha256:"
-                             (bytevector->base16-string (path-info-hash info)))
-                     #:nar-size (path-info-nar-size info))))
+    (register-valid-path db
+                         #:path item
+                         #:references (path-info-references info)
+                         #:deriver (path-info-deriver info)
+                         #:hash (string-append
+                                 "sha256:"
+                                 (bytevector->base16-string
+                                  (path-info-hash info)))
+                         #:nar-size (path-info-nar-size info))))
 
 (define* (copy-closure item target
                        #:key (log-port (current-error-port)))

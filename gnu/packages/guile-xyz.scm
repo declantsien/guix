@@ -48,6 +48,7 @@
 ;;; Copyright © 2022 jgart <jgart@dismail.de>
 ;;; Copyright © 2023 Andrew Tropin <andrew@trop.in>
 ;;; Copyright © 2024 Ilya Chernyshov <ichernyshovvv@gmail.com>
+;;; Copyright © 2024 Artyom Bologov <mail@aartaka.me>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -1326,8 +1327,8 @@ works with Guile 1.4.x to 2.0.x.")
     (license license:gpl3+)))
 
 (define-public guile-prometheus
-  (let ((commit "4aaf902eb45b3a4c1003f854bda56c516fdf4f5b")
-        (revision "6"))
+  (let ((commit "e63335e64a1f63967b94ba6dd97889f9f565ca48")
+        (revision "7"))
     (package
     (name "guile-prometheus")
     (version (git-version "0" revision commit))
@@ -1338,7 +1339,7 @@ works with Guile 1.4.x to 2.0.x.")
                     (commit commit)))
               (sha256
                (base32
-                "03sr7wgksi9ys6jyzsnwanl2qqa8csi8jzcgrc3wfzp17vcc16yi"))
+                "0f8rykqx3mdbi7mgvvanx65i9gn5wmb768vlzrbg002v38284bf2"))
               (file-name (string-append name "-" version "-checkout"))))
     (build-system gnu-build-system)
     (native-inputs
@@ -2025,8 +2026,8 @@ for MySQL.")
     (license license:gpl2+)))
 
 (define-public guile-lmdb
-  (let ((commit "438143ca9ba157faec6f4c2740092c31c733fbfe")
-        (revision "0"))
+  (let ((commit "ea9aa1d4b13e03f9fd23ec73d8884f4fae79666b")
+        (revision "1"))
     (package
       (name "guile-lmdb")
       (version (git-version "0.0.1" revision commit))
@@ -2038,7 +2039,7 @@ for MySQL.")
                 (file-name (git-file-name name version))
                 (sha256
                  (base32
-                  "0p43c8ppbhzpi944in0z2jqr7acl8pm7s1x0p5f0idqda6n6f828"))))
+                  "1li92ldyjvbqkhqnkndgw0jk1avkzq9jkbmk8dqiby4na72sxi8k"))))
       (build-system guile-build-system)
       (arguments
        (list
@@ -2059,7 +2060,8 @@ for MySQL.")
 Most names are the same as LMDB ones, except for prefix absence.
 Several conveniences are added on top:
 @itemize
-@item @code{call-with-env-and-txn} and @code{call-with-cursor} wrappers.
+@item @code{call-with-env-and-txn}, @code{call-with-cursor}, and
+@code{call-with-wrapped-cursor} helpers and respective @code{with-} macros.
 @item @code{for-cursor} procedure for cursor iteration.
 @item @code{val} and @code{stat} types.
 @item Error signaling instead of integer return values.
@@ -2311,12 +2313,12 @@ user which package sets would they like to install from it.")
                              (invoke "guild" "compile" "-L" module-dir
                                      file "-o" go)))
                          (find-files module-dir "\\.scm$")))))
+         (add-after 'unpack 'make-autoloads
+           (assoc-ref emacs:%standard-phases 'make-autoloads))
          (add-after 'install 'install-emacs-files
            (assoc-ref emacs:%standard-phases 'install))
          (add-after 'install-emacs-files 'compile-emacs-files
-           (assoc-ref emacs:%standard-phases 'build))
-         (add-after 'compile-emacs-files 'make-autoloads
-           (assoc-ref emacs:%standard-phases 'make-autoloads)))))
+           (assoc-ref emacs:%standard-phases 'build)))))
     (home-page "https://www.draketo.de/english/wisp")
     (inputs
      (list guile-3.0))
@@ -2492,7 +2494,7 @@ capabilities.")
               (setenv "DISPLAY" ":1")
               #t)))))
     (inputs
-     (list guile-3.0 guile-lib glib-next))
+     (list guile-3.0 guile-lib glib))
     (native-inputs
      (list autoconf
            automake
@@ -2725,14 +2727,14 @@ library.")
 (define-public guile-lib
   (package
     (name "guile-lib")
-    (version "0.2.7")
+    (version "0.2.8")
     (source (origin
               (method url-fetch)
               (uri (string-append "mirror://savannah/guile-lib/guile-lib-"
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1ph4z4a64m75in36pdb4dw63dzdq3hdgh16gq33q460jby23pvz4"))))
+                "1nb7swbliw9vx1ivhgd2m0r0p7nlkszw6s41zcgfwb5v1kp05sb4"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags '("GUILE_AUTO_COMPILE=0") ;placate guild warnings
@@ -3484,7 +3486,7 @@ from @code{tree-il}.")
 (define-public guile-hoot
   (package
     (name "guile-hoot")
-    (version "0.3.0")
+    (version "0.4.0")
     (source (origin
               (method url-fetch)
               (uri (string-append "https://spritely.institute/files/releases"
@@ -3492,7 +3494,7 @@ from @code{tree-il}.")
                                   version ".tar.gz"))
               (sha256
                (base32
-                "1zgcp7xnx84gwdpxj0wga7xrcxcifp9fyp06b6d54gbxq4as8an1"))))
+                "0mlj9b9dzhd8k8jg9fgwxyxdy8rsynfq81vm00rjgbh2ivpgr3x2"))))
     (build-system gnu-build-system)
     (arguments
      '(#:make-flags '("GUILE_AUTO_COMPILE=0"
@@ -4253,7 +4255,7 @@ debugging code.")
 (define-public guile-png
   (package
     (name "guile-png")
-    (version "0.7.2")
+    (version "0.7.3")
     (source (origin
               (method git-fetch)
               (uri (git-reference
@@ -4262,7 +4264,7 @@ debugging code.")
               (file-name (string-append name "-" version "-checkout"))
               (sha256
                (base32
-                "1ad03r84j17rwfxbxqb0qmf70ggqs01kjyman3x1581lm5dk1757"))))
+                "0hgdp8fgyg6rdy130fsn4nnb58c98lsrayjyy5491l53814ggy65"))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -4516,6 +4518,45 @@ To use the bindings, import @code{(ffi cblas)}.  CBLAS will be loaded from the
 default dynamic library path.  There are up to three bindings for each
 function: raw, typed, and functional.")
       (license license:lgpl3+))))
+
+(define-public guile-gsl
+  (let ((commit "e6d1477b0d0456f500c32610a5cae6ebb1b8acfe")
+        (revision "0"))
+    (package
+      (name "guile-gsl")
+      (version (git-version "0.0.1" revision commit))
+      (source
+       (origin
+         (method git-fetch)
+         (uri (git-reference
+               (url "https://github.com/aartaka/guile-gsl")
+               (commit commit)))
+         (file-name (git-file-name name version))
+         (sha256
+          (base32 "1b4brimmg3phahia9dm0wkcp1f29wnbvmi0q8di5sz7pf7qjzsy0"))))
+      (build-system guile-build-system)
+      (arguments
+       (list
+        #:source-directory "modules"
+        #:phases
+        #~(modify-phases %standard-phases
+            (add-before 'build 'substitute-gsl-so
+              (lambda _
+                (let ((gsl (string-append #$(this-package-input "gsl")
+                                          "/lib/libgsl.so"))
+                      (gslcblas (string-append #$(this-package-input "gsl")
+                                               "/lib/libgslcblas.so")))
+                  (substitute* '("modules/gsl/core.scm")
+                    (("libgsl.so") gsl)
+                    (("libgslcblas.so") gslcblas))))))))
+      (native-inputs (list guile-3.0))
+      (inputs (list guile-3.0 gsl))
+      (home-page "https://github.com/aartaka/guile-gsl")
+      (synopsis "Bindings for GNU Scientific library in Guile")
+      (description
+       "This package provides a Guile Scheme wrapper for @code{libgsl.so}.
+Implements vector, matrix,and BLAS operations.")
+      (license license:gpl3+))))
 
 (define-public guile-ffi-fftw
   (let ((commit "294ad9e7491dcb40026d2fec9be2af05263be1c0")
@@ -5453,6 +5494,66 @@ to be encoded into uniformly sized, encrypted blocks that can be reassembled
 using a short read-capability.")
     (home-page "https://codeberg.org/eris/guile-eris")
     (license license:gpl3+)))
+
+(define-public guile-rsv
+  (let ((commit "41b04c85eef31d4d51001c6d66e8fd339fcc614c")
+        (revision "1"))
+    (package
+      (name "guile-rsv")
+      (version (git-version "0.2.0" revision commit))
+      (home-page "https://codeberg.org/kakafarm/guile-rsv/")
+      (source
+       (origin
+         (uri (git-reference (url home-page) (commit commit)))
+         (method git-fetch)
+         (file-name (git-file-name name version))
+         (sha256
+          (base32
+           "1w9jbkpmh13zrxkj915nm3l537smm0jsrdzrzcxylb6w59vqpw6l"))))
+      (inputs (list guile-3.0 bash))
+      (build-system guile-build-system)
+      (arguments
+       (list
+        #:phases #~(modify-phases %standard-phases
+                     (add-after 'install 'link-and-wrap-executable
+                       (lambda _
+                         (let* ((bin (string-append #$output "/bin"))
+                                ;; bin directory for PATH.
+                                (site-version (target-guile-effective-version))
+                                (scm (string-append "/share/guile/site/"
+                                                    site-version))
+                                (go (string-append "/lib/guile/" site-version
+                                                   "/site-ccache")))
+                           (mkdir-p bin)
+                           (for-each (lambda (command-name)
+                                       (let ((source-script (string-append #$output
+                                                                           scm "/"
+                                                                           command-name
+                                                                           ".scm"))
+                                             (target-command (string-append
+                                                              bin "/"
+                                                              command-name)))
+                                         (symlink source-script target-command)
+                                         (wrap-program target-command
+                                           #:sh (which "bash")
+                                           `("GUILE_LOAD_PATH" prefix
+                                             (,(string-append #$output scm)))
+                                           `("GUILE_LOAD_COMPILED_PATH" prefix
+                                             (,(string-append #$output go))))))
+                                     (list "scm2rsv" "rsv2scm"))))))))
+      (synopsis "Reading and writing @acronym{RSV, rows of string values} data format")
+      (description
+       "R7RS-small Scheme library for reading and writing @acronym{RSV, rows
+of string values} data format, a very simple binary format for storing tables
+of strings.  It is a competitor for CSV (Comma Seperated Values) and TSV (Tab
+Separated Values).  Its main benefit is that the strings are represented as
+Unicode encoded as UTF-8, and the value and row separators are byte values
+that are never used in UTF-8, so the strings do not need any error prone
+escaping and thus can be written and read verbatim.
+
+The RSV format is specified in
+@url{https://github.com/Stenway/RSV-Specification}.")
+      (license license:gpl3+))))
 
 (define-public guile-r6rs-protobuf
   (package

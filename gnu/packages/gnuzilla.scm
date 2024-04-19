@@ -64,6 +64,7 @@
   #:use-module (gnu packages base)
   #:use-module (gnu packages bash)
   #:use-module (gnu packages databases)
+  #:use-module (gnu packages freedesktop)
   #:use-module (gnu packages glib)
   #:use-module (gnu packages gtk)
   #:use-module (gnu packages gnome)
@@ -522,9 +523,9 @@ variable defined below.  It requires guile-json to be installed."
 ;; XXXX: Workaround 'snippet' limitations.
 (define computed-origin-method (@@ (guix packages) computed-origin-method))
 
-(define %icecat-base-version "115.9.0")
+(define %icecat-base-version "115.10.0")
 (define %icecat-version (string-append %icecat-base-version "-guix0-preview1"))
-(define %icecat-build-id "20240319000000") ;must be of the form YYYYMMDDhhmmss
+(define %icecat-build-id "20240416000000") ;must be of the form YYYYMMDDhhmmss
 
 ;; 'icecat-source' is a "computed" origin that generates an IceCat tarball
 ;; from the corresponding upstream Firefox ESR tarball, using the 'makeicecat'
@@ -544,12 +545,12 @@ variable defined below.  It requires guile-json to be installed."
                   "firefox-" upstream-firefox-version ".source.tar.xz"))
             (sha256
              (base32
-              "00r847l2j2wk20wf1plbnz2ifyqkvwqmaqwq6zknsqz6qmqk6fyv"))))
+              "1wpf4vcrvnvhnfzqavbkzqbn51bds1l9f6ld4mzh9xwm7mrkrz8a"))))
 
          ;; The upstream-icecat-base-version may be older than the
          ;; %icecat-base-version.
-         (upstream-icecat-base-version "115.9.0")
-         (gnuzilla-commit "d1dab742d12e2ffacae70733b14016287fc46613")
+         (upstream-icecat-base-version "115.10.0")
+         (gnuzilla-commit "40e114e5e8fd0b4d3621d6c8aebf0c78100578f2")
          (gnuzilla-source
           (origin
             (method git-fetch)
@@ -561,7 +562,7 @@ variable defined below.  It requires guile-json to be installed."
                                       (string-take gnuzilla-commit 8)))
             (sha256
              (base32
-              "16z2l0fbbxpl2q80w9mx0x89cq82plkb45jpf172xah0k782akhd"))))
+              "1x6miiafhv9ncddm7xxjz88amq9bpv6sqnw5k0yz6fy1ghw9ckw0"))))
 
          ;; 'search-patch' returns either a valid file name or #f, so wrap it
          ;; in 'assume-valid-file-name' to avoid 'local-file' warnings.

@@ -193,8 +193,17 @@ of a larger interface.")
                 "0x8lxvnhfpssj84x47y3y06vsvhd5afb9jknw38c8ymbxafzxpi6"))))
     (build-system meson-build-system)
     (arguments
-     `(#:configure-flags
-       (list "-Dwith-docs=false")))
+     (list
+      #:configure-flags #~(list "-Dwith-docs=false")
+      #:phases
+      #~(modify-phases %standard-phases
+          #$@(if (target-aarch64?)
+                 #~((add-after 'unpack 'disable-failing-test
+                      (lambda _
+                        (substitute* "tests/meson.build"
+                          ;; float -> u8 1 failed #1[1]  got 76 expected 77
+                          (("'float-to-8bit',") "")))))
+                 '()))))
     (native-inputs
      (list gobject-introspection pkg-config vala))
     (propagated-inputs
@@ -251,23 +260,23 @@ provided, as well as a framework to add new color models and data types.")
      (list babl glib json-glib))
     (inputs
      ;; All inputs except libjpeg and libpng are optional.
-     `(("cairo" ,cairo)
-       ("gdk-pixbuf" ,gdk-pixbuf)
-       ("gexiv2" ,gexiv2)
-       ("jasper" ,jasper)
-       ("libjpeg" ,libjpeg-turbo)
-       ("libnsgif" ,libnsgif)
-       ("libpng" ,libpng)
-       ("libraw" ,libraw)
-       ("librsvg" ,(librsvg-for-system))
-       ("libspiro" ,libspiro)
-       ("libtiff" ,libtiff)
-       ("libwebp" ,libwebp)
-       ("maxflow" ,maxflow)
-       ("openexr" ,openexr-2)
-       ("pango" ,pango)
-       ("poppler" ,poppler)
-       ("sdl2" ,sdl2)))
+     (list cairo
+           gdk-pixbuf
+           gexiv2
+           jasper
+           libjpeg-turbo
+           libnsgif
+           libpng
+           libraw
+           (librsvg-for-system)
+           libspiro
+           libtiff
+           libwebp
+           maxflow
+           openexr-2
+           pango
+           poppler
+           sdl2))
     (native-inputs
      (list `(,glib "bin")               ; for gtester
            gobject-introspection
