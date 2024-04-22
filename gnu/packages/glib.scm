@@ -308,18 +308,17 @@ information, refer to the @samp{dbus-daemon(1)} man page.")))
                                "gdbus-peer.c"
                                "appinfo.c"
                                "desktop-app-info.c")
-                  (("[ \t]*g_test_add_func.*;") "")))
+                  (("[ \t]*g_test_add_func.*;") ""))
+                (unless (which "update-desktop-database")
+                  (substitute* "file.c"
+                    (("[ \t]*g_test_add_func.*query-default-handler.*;") "")))
+                (substitute* '("portal-support-snap.c")
+                  (("g_test_init .*")
+                   "return EXIT_SUCCESS;")))
               (substitute* "glib/tests/error.c"
                 ;; This test segfaults with glibc 2.38.
                 (("g_test_add_func.*new-valist/invalid.*" all)
                  (string-append "//" all "\n")))
-
-              (unless (which "update-desktop-database")
-                (substitute* "file.c"
-                  (("[ \t]*g_test_add_func.*query-default-handler.*;") "")))
-              (substitute* '("portal-support-snap.c")
-                (("g_test_init .*")
-                 "return EXIT_SUCCESS;"))
 
               #$@(if (target-x86-32?)
                      ;; Comment out parts of timer.c that fail on i686 due to
