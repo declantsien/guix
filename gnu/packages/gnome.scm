@@ -7191,7 +7191,8 @@ almost all of them.")
                                   "epiphany-" version ".tar.xz"))
               (sha256
                (base32
-                "1n3df2skvgmjw9sybhn811l4b58ibwxc0dc208wpvxg060pyhpfk"))))
+                "1n3df2skvgmjw9sybhn811l4b58ibwxc0dc208wpvxg060pyhpfk"))
+              (patches (search-patches "epiphany-fix-encoding-test.patch"))))
     (build-system meson-build-system)
     (arguments
      (list
