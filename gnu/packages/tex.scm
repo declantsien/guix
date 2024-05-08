@@ -658,15 +658,6 @@ and should be preferred to it whenever a package would otherwise depend on
                   (srfi srfi-26))
       #:out-of-source? #t
       #:parallel-tests? #f              ;bibtex8.test fails otherwise
-      ;; Disable tests on some architectures to cope with a failure of
-      ;; luajiterr.test.
-      ;;
-      ;; XXX FIXME fix luajit properly on these architectures.
-      #:tests? (let ((s (or (%current-target-system)
-                            (%current-system))))
-                 (not (or (string-prefix? "aarch64" s)
-                          (string-prefix? "mips64" s)
-                          (string-prefix? "powerpc64le" s))))
       #:configure-flags
       #~(let ((kpathsea #$(this-package-input "texlive-libkpathsea")))
           (list "--with-banner-add=/GNU Guix"
