@@ -716,41 +716,6 @@ and should be preferred to it whenever a package would otherwise depend on
                 (("/usr/include /usr/local/include")
                  (string-append #$(this-package-input "texlive-libkpathsea")
                                 "/include")))))
-          (add-after 'unpack 'patch-dvisvgm-build-files
-            (lambda _
-              ;; XXX: Ghostscript is detected, but HAVE_LIBGS is never set, so
-              ;; the appropriate linker flags are not added.
-              (substitute* "texk/dvisvgm/configure"
-                (("^have_libgs=yes" all)
-                 (string-append all "\nHAVE_LIBGS=1")))))
-          (add-after 'unpack 'disable-failing-test
-            (lambda _
-              ;; FIXME: This test fails on 32-bit architectures since Glibc
-              ;; 2.28: <https://bugzilla.redhat.com/show_bug.cgi?id=1631847>.
-              (substitute* "texk/web2c/omegafonts/check.test"
-                (("^\\./omfonts -ofm2opl \\$srcdir/tests/check tests/xcheck \\|\\| exit 1")
-                 "./omfonts -ofm2opl $srcdir/tests/check tests/xcheck || exit 77"))))
-          #$@(if (or (target-ppc32?)
-                     (target-riscv64?))
-                 ;; Some mendex tests fail on some architectures.
-                 `((add-after 'unpack 'skip-mendex-tests
-                     (lambda _
-                       (substitute* '("texk/mendexk/tests/mendex.test"
-                                      "texk/upmendex/tests/upmendex.test")
-                         (("srcdir/tests/pprecA-0.ind pprecA-0.ind1 \\|\\| exit 1")
-                          "srcdir/tests/pprecA-0.ind pprecA-0.ind1 || exit 77")))))
-                 '())
-          #$@(if (or (target-arm32?)
-                     (target-ppc32?))
-                 `((add-after 'unpack 'skip-faulty-test
-                     (lambda _
-                       ;; Skip this faulty test on armhf-linux:
-                       ;;   https://issues.guix.gnu.org/54055
-                       (substitute* '("texk/mendexk/tests/mendex.test"
-                                      "texk/upmendex/tests/upmendex.test")
-                         (("^TEXMFCNF=" all)
-                          (string-append "exit 77 # skip\n" all))))))
-                 '())
           (add-after 'install 'post-install
             (lambda _
               ;; Create symbolic links for the latex variants.  We link
