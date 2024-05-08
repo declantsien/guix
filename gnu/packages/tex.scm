@@ -41795,6 +41795,69 @@ produce bounding box values for Rawppm or Rawpbm format files.")
 documents generated that use Type 1 fonts.")
     (license license:isc)))
 
+(define texlive-psutils-bin
+  (package
+    (inherit texlive-bin)
+    (name "texlive-psutils-bin")
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root keep)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir
+                       "."
+                       (lambda (file)
+                         (and (not (member file (append keep '("." ".."))))
+                              (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("psutils"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-psutils"
+                 "--with-system-libpaper"
+                 (delete "--disable-psutils" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'patch-psutils-tests
+              (lambda _
+                ;; This test fails due to a rounding difference with libpaper
+                ;; 1.2: <https://github.com/rrthomas/libpaper/issues/23>.
+                ;;
+                ;; Adjust the expected outcome to account for the minute
+                ;; difference.
+                (substitute* "texk/psutils/tests/playres.ps"
+                  (("844\\.647799") "844.647797"))
+                ;; Test suite also fails because it expects to find
+                ;; "texmf.cnf" in "../kpathsea/" directory, but we removed it
+                ;; in a snippet.  Point to the real "texmf.cnf".
+                (let ((kpathsea
+                       #$(this-package-native-input "texlive-libkpathsea")))
+                  (substitute* "texk/psutils/psutils.test"
+                    (("(TEXMFCNF=).+?;" _ var)
+                     (string-append var
+                                    kpathsea
+                                    "/share/texmf-dist/web2c;"))))))
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/psutils"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                (with-directory-excursion "texk/psutils"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list libpaper pkg-config texlive-libkpathsea))
+    (inputs '())))
+
 (define-public texlive-psutils
   (package
     (name "texlive-psutils")
@@ -41829,7 +41892,21 @@ documents generated that use Type 1 fonts.")
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
     (arguments
-     (list #:link-scripts #~(list "extractres.pl" "includeres.pl" "psjoin.pl")))
+     (list
+      #:link-scripts #~(list "extractres.pl" "includeres.pl" "psjoin.pl")
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'link-scripts 'install-bin
+            (lambda* (#:key inputs native-inputs #:allow-other-keys)
+              (let ((source #$(this-package-native-input "texlive-psutils-bin")))
+                (with-directory-excursion (string-append #$output "/bin")
+                  ;; Install non-scripts, already taken care of with
+                  ;; `link-scripts' phase.
+                  (for-each (lambda (f) (install-file f "."))
+                            (find-files (string-append source "/bin")
+                                        (lambda (_ s)
+                                          (eq? 'regular (stat:type s))))))))))))
+    (native-inputs (list texlive-psutils-bin))
     (inputs (list perl))
     (home-page "https://ctan.org/pkg/psutils")
     (synopsis "PostScript utilities")
