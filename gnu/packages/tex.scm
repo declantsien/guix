@@ -176,27 +176,14 @@
 (define-public texlive-libkpathsea
   (package
     (name "texlive-libkpathsea")
-    (version "20230313")
+    (version (number->string %texlive-revision))
     (source
      (origin
-       (method url-fetch)
-       (uri (string-append "ftp://tug.org/historic/systems/texlive/"
-                           (string-take version 4)
-                           "/texlive-" version "-source.tar.xz"))
-       (sha256
-        (base32
-         "1fbrkv7g9j6ipmwjx27l8l9l974rmply8bhf7c2iqc6h3q7aly1q"))
+       (inherit texlive-source)
        (modules '((guix build utils)
                   (ice-9 ftw)))
        (snippet
         #~(begin
-            (with-directory-excursion "libs"
-              (for-each
-               delete-file-recursively
-               (scandir "."
-                        (lambda (file)
-                          (and (not (member file '("." "..")))
-                               (eq? 'directory (stat:type (stat file))))))))
             (with-directory-excursion "texk"
               (let ((preserved-directories '("." ".." "kpathsea")))
                 (for-each
@@ -204,7 +191,14 @@
                  (scandir "."
                           (lambda (file)
                             (and (not (member file preserved-directories))
-                                 (eq? 'directory (stat:type (stat file)))))))))))))
+                                 (eq? 'directory (stat:type (stat file)))))))))
+            (with-directory-excursion "libs"
+              (for-each
+               delete-file-recursively
+               (scandir "."
+                        (lambda (file)
+                          (and (not (member file '("." "..")))
+                               (eq? 'directory (stat:type (stat file))))))))))))
     (build-system gnu-build-system)
     (arguments
      (list
@@ -633,11 +627,14 @@ and should be preferred to it whenever a package would otherwise depend on
 (define-deprecated-package texlive-ukrhyph texlive-hyphen-complete)
 
 (define-public texlive-bin
-  (package/inherit texlive-libkpathsea
+  (package
     (name "texlive-bin")
+    (version (number->string %texlive-revision))
     (source
      (origin
-       (inherit (package-source texlive-libkpathsea))
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
        (snippet
         ;; TODO: Unbundle stuff in texk/dvisvgm/dvisvgm-src/libs too.
         #~(with-directory-excursion "libs"
@@ -651,6 +648,7 @@ and should be preferred to it whenever a package would otherwise depend on
                                    (and (not (member file preserved-directories))
                                         (eq? 'directory
                                              (stat:type (stat file))))))))))))
+    (build-system gnu-build-system)
     (arguments
      (list
       #:modules '((guix build gnu-build-system)
@@ -660,6 +658,15 @@ and should be preferred to it whenever a package would otherwise depend on
                   (srfi srfi-26))
       #:out-of-source? #t
       #:parallel-tests? #f              ;bibtex8.test fails otherwise
+      ;; Disable tests on some architectures to cope with a failure of
+      ;; luajiterr.test.
+      ;;
+      ;; XXX FIXME fix luajit properly on these architectures.
+      #:tests? (let ((s (or (%current-target-system)
+                            (%current-system))))
+                 (not (or (string-prefix? "aarch64" s)
+                          (string-prefix? "mips64" s)
+                          (string-prefix? "powerpc64le" s))))
       #:configure-flags
       #~(let ((kpathsea #$(this-package-input "texlive-libkpathsea")))
           (list "--with-banner-add=/GNU Guix"
@@ -667,7 +674,6 @@ and should be preferred to it whenever a package would otherwise depend on
                 "--disable-native-texlive-build"
                 "--disable-static"
                 "--disable-linked-scripts"
-                "--disable-kpathsea"
                 "--with-system-cairo"
                 "--with-system-freetype2"
                 "--with-system-gd"
@@ -695,16 +701,11 @@ and should be preferred to it whenever a package would otherwise depend on
                        '("--disable-luajittex"
                          "--disable-luajithbtex"
                          "--disable-mfluajit")
-                       '())))
-      ;; Disable tests on some architectures to cope with a failure of
-      ;; luajiterr.test.
-      ;;
-      ;; XXX FIXME fix luajit properly on these architectures.
-      #:tests? (let ((s (or (%current-target-system)
-                            (%current-system))))
-                 (not (or (string-prefix? "aarch64" s)
-                          (string-prefix? "mips64" s)
-                          (string-prefix? "powerpc64le" s))))
+                       '())
+                ;; Disable tools built in other packages.
+                "--disable-kpathsea"
+                "--disable-chktex"
+                "--disable-psutils"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
@@ -715,24 +716,6 @@ and should be preferred to it whenever a package would otherwise depend on
                 (("/usr/include /usr/local/include")
                  (string-append #$(this-package-input "texlive-libkpathsea")
                                 "/include")))))
-          (add-after 'unpack 'patch-psutils-test
-            (lambda _
-              ;; This test fails due to a rounding difference with libpaper
-              ;; 1.2: <https://github.com/rrthomas/libpaper/issues/23>.
-              ;;
-              ;; Adjust the expected outcome to account for the minute
-              ;; difference.
-              (substitute* "texk/psutils/tests/playres.ps"
-                (("844\\.647799") "844.647797"))))
-          (add-after 'unpack 'configure-ghostscript-executable
-            ;; ps2eps.pl uses the "gswin32c" ghostscript executable on
-            ;; Windows, and the "gs" ghostscript executable on Unix.  It
-            ;; detects Unix by checking for the existence of the /usr/bin
-            ;; directory.  Since Guix System does not have /usr/bin, it is
-            ;; also detected as Windows.
-            (lambda _
-              (substitute* "utils/ps2eps/ps2eps-src/bin/ps2eps.pl"
-                (("gswin32c") "gs"))))
           (add-after 'unpack 'patch-dvisvgm-build-files
             (lambda _
               ;; XXX: Ghostscript is detected, but HAVE_LIBGS is never set, so
@@ -783,7 +766,7 @@ and should be preferred to it whenever a package would otherwise depend on
                       (string-append (getenv "PATH") ":" #$output "/bin"))
               (with-directory-excursion #$output
                 (assoc-ref %standard-phases 'patch-source-shebangs)))))))
-    (native-inputs (list groff-minimal pkg-config))
+    (native-inputs (list groff-minimal perl pkg-config))
     (inputs
      (list cairo
            config
@@ -801,11 +784,8 @@ and should be preferred to it whenever a package would otherwise depend on
            libxaw
            libxt
            mpfr
-           perl
            pixman
            potrace
-           python
-           ruby-2.7
            tcsh
            teckit
            zlib
