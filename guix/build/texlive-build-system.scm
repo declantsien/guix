@@ -2,7 +2,7 @@
 ;;; Copyright © 2017 Ricardo Wurmus <rekado@elephly.net>
 ;;; Copyright © 2021 Maxim Cournoyer <maxim.cournoyer@gmail.com>
 ;;; Copyright © 2021 Thiago Jung Bauermann <bauermann@kolabnow.com>
-;;; Copyright © 2023 Nicolas Goaziou <mail@nicolasgoaziou.fr>
+;;; Copyright © 2023, 2024 Nicolas Goaziou <mail@nicolasgoaziou.fr>
 ;;;
 ;;; This file is part of GNU Guix.
 ;;;
@@ -215,6 +215,9 @@ runfile to replace.  If a file has no matching runfile, it is ignored."
              (files files)))
           (else '()))))
     (unless (null? targets)
+      ;; Default cache is located in $HOME, which is not set during build.
+      ;; Use current working directory instead.
+      (setenv "TEXMFCACHE" "texmf-cache/")
       (let ((output (string-append (getcwd) "/build")))
         (mkdir-p output)
         (for-each (lambda (target)
