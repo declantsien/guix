@@ -162,6 +162,17 @@
   (define-deprecated/public old-name name
     (deprecated-package (symbol->string 'old-name) name)))
 
+(define texlive-source
+  (let ((version "20230313"))
+    (origin
+      (method url-fetch)
+      (uri (string-append "ftp://tug.org/historic/systems/texlive/"
+                          (string-take version 4) "/"
+                          "texlive-" version "-source.tar.xz"))
+      (sha256
+       (base32
+        "1fbrkv7g9j6ipmwjx27l8l9l974rmply8bhf7c2iqc6h3q7aly1q")))))
+
 (define-public texlive-libkpathsea
   (package
     (name "texlive-libkpathsea")
@@ -33369,24 +33380,58 @@ labels and advises the user to use a starred version instead.")
 
 (define-public texlive-chktex
   (package
+    (inherit texlive-bin)
     (name "texlive-chktex")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "chktex/"
-                   "doc/chktex/"
-                   "doc/man/man1/chktex.1"
-                   "doc/man/man1/chktex.man1.pdf"
-                   "doc/man/man1/chkweb.1"
-                   "doc/man/man1/chkweb.man1.pdf"
-                   "doc/man/man1/deweb.1"
-                   "doc/man/man1/deweb.man1.pdf"
-                   "scripts/chktex/")
-             (base32
-              "0qyrllxvcymmr1a4sq9c88fw5zchcx0n6yac69s61fg6xypk18bq")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
-    (arguments (list #:link-scripts #~(list "chkweb.sh" "deweb.pl")))
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root keep)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir
+                       "."
+                       (lambda (file)
+                         (and (not (member file (append keep '("." ".."))))
+                              (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("chktex"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-chktex"
+                 (delete "--disable-ckhtex" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'locate-global-configuration-file
+              ;; `chktex' needs to know where its global configuration file is.
+              ;; However, it cannot understand our convoluted TEXMFMAIN value.
+              ;; This phase forces configuration file name.
+              (lambda _
+                (substitute* "texk/chktex/chktex-src/OpSys.c"
+                  (("kpse_var_value\\(\"TEXMFMAIN\"\\)")
+                   (string-append "strdup(\"" #$output "/share/texmf-dist\")")))))
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/chktex"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/chktex"
+                  (invoke "make" "install"))))
+            ;; Compilation forces a "/usr/bin/env perl" shebang.  Change it.
+            (add-after 'install 'patch-shebang
+              (lambda _
+                (patch-shebang
+                 (string-append #$output
+                                "/share/texmf-dist/scripts/chktex/deweb.pl"))))))))
     (inputs (list perl))
     (home-page "https://ctan.org/pkg/chktex")
     (synopsis "Check for errors in LaTeX documents")
