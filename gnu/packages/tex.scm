@@ -218,21 +218,28 @@
             ;; environment variable defined via a search path below.
             ;;
             ;; This phase must happen before the `configure' phase, because
-            ;; the value of the TEXMFCNF variable (modified along with the
-            ;; SELFAUTOLOC reference below) is used at compile time to
+            ;; the value of the TEXMFCNF variable is used at compile time to
             ;; generate "paths.h" file.
             (lambda _
               (substitute* "texk/kpathsea/texmf.cnf"
-                (("^TEXMFROOT = .*")
-                 "TEXMFROOT = {$GUIX_TEXMF}/..\n")
-                (("^TEXMF = .*")
-                 "TEXMF = {$GUIX_TEXMF}\n")
-                (("\\$SELFAUTOLOC(/share/texmf-dist/web2c)" _ suffix)
-                 (string-append #$output suffix))
+                (("^TEXMFROOT = .*") "TEXMFROOT = {$GUIX_TEXMF}/..\n")
+                (("^TEXMFDIST = .*") "TEXMFDIST = {$GUIX_TEXMF}\n")
+                ;; "ls-R" files are to be expected only in the TEXMFDIST
+                ;; directories.  However, those are not always present, e.g.,
+                ;; when building a package with `texlive-build-system' or when
+                ;; generating a profile.  Since both situations need to be
+                ;; handled, drop the "!!" prefix in front of TEXMFDIST.
+                (("!!\\$TEXMFDIST") "$TEXMFDIST")
+                (("^TEXMFDBS = .*") "TEXMFDBS = {$TEXMFDIST}\n")
                 ;; Ignore system-wide cache.  Use local one, by default
                 ;; "$HOME/.texliveYYYY/texmf-var/".
-                (("^TEXMFCACHE = .*")
-                 "TEXMFCACHE = $TEXMFVAR\n")
+                (("^TEXMFCACHE = .*") "TEXMFCACHE = $TEXMFVAR\n")
+                ;; Set TEXMFCNF.  Since earlier values of variables have
+                ;; precedence over later ones, instead the appropriate value
+                ;; above the lengthy one.
+                (("^TEXMFCNF = " lead)
+                 (string-append
+                  "TEXMFCNF = " #$output "/share/texmf-dist/web2c\n" lead))
                 ;; Don't truncate lines.
                 (("^error_line = .*$") "error_line = 254\n")
                 (("^half_error_line = .*$") "half_error_line = 238\n")
