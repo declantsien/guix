@@ -705,7 +705,8 @@ and should be preferred to it whenever a package would otherwise depend on
                 "--disable-dvisvgm"
                 "--disable-kpathsea"
                 "--disable-psutils"
-                "--disable-upmendex"))
+                "--disable-upmendex"
+                "--disable-xindy"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
