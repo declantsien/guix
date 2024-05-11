@@ -778,7 +778,8 @@ and should be preferred to it whenever a package would otherwise depend on
                           "psutils"
                           "t1utils"
                           "upmendex"
-                          "xindy"))))
+                          "xindy"
+                          "xpdfopen"))))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
@@ -45820,18 +45821,45 @@ integer (given as a string) as a Cistercian numeral.")
 
 (define-public texlive-xpdfopen
   (package
+    (inherit texlive-bin)
     (name "texlive-xpdfopen")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/pdfclose.1"
-                   "doc/man/man1/pdfclose.man1.pdf"
-                   "doc/man/man1/pdfopen.1"
-                   "doc/man/man1/pdfopen.man1.pdf")
-             (base32
-              "130wvaypfrg9sav0pdcdy1g10fll8pqcsqsy70fxlzzr937glsh1")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("xpdfopen"))
+            (delete-other-directories "texk" '())))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-xpdfopen"
+                 (delete "--disable-xpdfopen" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/xpdfopen"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/xpdfopen"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list pkg-config))
+    (inputs (list libxt))
     (home-page "https://ctan.org/pkg/xpdfopen")
     (synopsis "Commands to control PDF readers, under X11")
     (description
