@@ -773,6 +773,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "ps2eps"
                           "psutils"
                           "t1utils"
+                          "texdoctk"
                           "upmendex"
                           "xindy"
                           "xpdfopen"))))
@@ -43505,8 +43506,16 @@ other configuration can be extensively customized.")
               "18xxivpgjdh8v6kg0b45zjv18sm9a4ljpwk6a4cghg5l5yggrjcx")))
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
-    (arguments (list #:link-scripts #~(list "texdoctk.pl")))
-    (inputs (list perl))
+    (arguments
+     (list
+      #:link-scripts #~(list "texdoctk.pl")
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'link-scripts 'wrap-perl-script
+            (lambda _
+              (wrap-program (string-append #$output "/bin/texdoctk")
+                `("PERL5LIB" ":" prefix (,(getenv "PERL5LIB")))))))))
+    (inputs (list perl perl-tk))
     (propagated-inputs (list texlive-kpathsea))
     (home-page "https://ctan.org/pkg/texdoctk")
     (synopsis "Easy access to package documentation")
