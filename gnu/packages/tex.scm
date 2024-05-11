@@ -776,6 +776,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "texdoctk"
                           "upmendex"
                           "xindy"
+                          "xml2pmx"
                           "xpdfopen"))))
       #:phases
       #~(modify-phases %standard-phases
@@ -47270,16 +47271,43 @@ correctly; and define two extra commands: @code{\\vfrac} and
 
 (define-public texlive-xml2pmx
   (package
+    (inherit texlive-bin)
     (name "texlive-xml2pmx")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/xml2pmx.1"
-                   "doc/man/man1/xml2pmx.man1.pdf")
-             (base32
-              "1d3ralqh0b71scd59b4hmm707yfrz1rj28ni2lzkhbb1ql73bvah")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("xml2pmx"))
+            (delete-other-directories "texk" '())))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-xml2pmx"
+                 (delete "--disable-xml2pmx" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/xml2pmx"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/xml2pmx"
+                  (invoke "make" "install"))))))))
     (home-page "https://ctan.org/pkg/xml2pmx")
     (synopsis "Convert MusicXML to PMX and MusiXTeX")
     (description
