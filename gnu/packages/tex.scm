@@ -184,22 +184,18 @@
        (modules '((guix build utils)
                   (ice-9 ftw)))
        (snippet
-        #~(begin
-            (with-directory-excursion "texk"
-              (let ((preserved-directories '("." ".." "kpathsea")))
-                (for-each
-                 delete-file-recursively
-                 (scandir "."
-                          (lambda (file)
-                            (and (not (member file preserved-directories))
-                                 (eq? 'directory (stat:type (stat file)))))))))
-            (with-directory-excursion "libs"
-              (for-each
-               delete-file-recursively
-               (scandir "."
-                        (lambda (file)
-                          (and (not (member file '("." "..")))
-                               (eq? 'directory (stat:type (stat file))))))))))))
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("kpathsea"))))))
     (build-system gnu-build-system)
     (arguments
      (list
