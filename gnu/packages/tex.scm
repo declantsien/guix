@@ -763,6 +763,7 @@ and should be preferred to it whenever a package would otherwise depend on
                 ;; Disable tools built in other packages.
                 #$@(map (lambda (p) (string-append "--disable-" p))
                         '("afm2pl"
+                          "autosp"
                           "axodraw2"
                           "chktex"
                           "cjkutils"
@@ -4159,21 +4160,72 @@ package tries to put breaks at adequate places.  It is suitable for
 computer-generated long formulae with many terms.")
     (license license:lppl1.3+)))
 
+(define texlive-autosp-bin
+  (package
+    (inherit texlive-bin)
+    (name "texlive-autosp-bin")
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("autosp"))
+            (delete-other-directories "texk" '())))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-autosp"
+                 (delete "--disable-autosp" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/autosp"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                (with-directory-excursion "utils/autosp"
+                  (invoke "make" "install"))))))))
+    (inputs '())))
+
 (define-public texlive-autosp
   (package
     (name "texlive-autosp")
     (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/generic/autosp/"
-                   "doc/man/man1/autosp.1"
-                   "doc/man/man1/autosp.man1.pdf"
-                   "doc/man/man1/tex2aspc.1"
-                   "doc/man/man1/tex2aspc.man1.pdf")
-             (base32
-              "16szmbffp9pwzv7zq3l4yvnsfk4m7w57wib7pqpgv1v5fzhlaahs")))
+    (source
+     (texlive-origin name version
+                     (list "doc/generic/autosp/" "doc/man/man1/autosp.1"
+                           "doc/man/man1/autosp.man1.pdf"
+                           "doc/man/man1/tex2aspc.1"
+                           "doc/man/man1/tex2aspc.man1.pdf")
+                     (base32
+                      "16szmbffp9pwzv7zq3l4yvnsfk4m7w57wib7pqpgv1v5fzhlaahs")))
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'install 'install-bin
+                 (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                   (let ((bin #$(this-package-native-input "texlive-autosp-bin"))
+                         (target (string-append #$output "/bin")))
+                     (mkdir-p target)
+                     (copy-recursively (string-append bin "/bin")
+                                       target)))))))
+    (native-inputs (list texlive-autosp-bin))
     (home-page "https://ctan.org/pkg/autosp")
     (synopsis
      "Preprocessor generating note-spacing commands for MusiXTeX scores")
@@ -4186,6 +4238,7 @@ coding for an entire measure can be entered one part at a time, without
 concern for note-spacing changes within the part or spacing requirements of
 other parts.")
     (license license:gpl2+)))
+
 
 (define-public texlive-axodraw2
   (package
