@@ -708,6 +708,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "dvisvgm"
                           "kpathsea"
                           "lacheck"
+                          "lcdf-typetools"
                           "psutils"
                           "upmendex"
                           "xindy"))))
@@ -37586,36 +37587,45 @@ TeX.")
 
 (define-public texlive-lcdftypetools
   (package
+    (inherit texlive-bin)
     (name "texlive-lcdftypetools")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/cfftot1.1"
-                   "doc/man/man1/cfftot1.man1.pdf"
-                   "doc/man/man1/mmafm.1"
-                   "doc/man/man1/mmafm.man1.pdf"
-                   "doc/man/man1/mmpfb.1"
-                   "doc/man/man1/mmpfb.man1.pdf"
-                   "doc/man/man1/otfinfo.1"
-                   "doc/man/man1/otfinfo.man1.pdf"
-                   "doc/man/man1/otftotfm.1"
-                   "doc/man/man1/otftotfm.man1.pdf"
-                   "doc/man/man1/t1dotlessj.1"
-                   "doc/man/man1/t1dotlessj.man1.pdf"
-                   "doc/man/man1/t1lint.1"
-                   "doc/man/man1/t1lint.man1.pdf"
-                   "doc/man/man1/t1rawafm.1"
-                   "doc/man/man1/t1rawafm.man1.pdf"
-                   "doc/man/man1/t1reencode.1"
-                   "doc/man/man1/t1reencode.man1.pdf"
-                   "doc/man/man1/t1testpage.1"
-                   "doc/man/man1/t1testpage.man1.pdf"
-                   "doc/man/man1/ttftotype42.1"
-                   "doc/man/man1/ttftotype42.man1.pdf")
-             (base32
-              "0yjbc6rsf8c62qa1lyi9kjyjy2p0xlps19llnvly3xyhla08j76f")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("lcdf-typetools"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-lcdf-typetools"
+                 (delete "--disable-lcdf-typetools" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/lcdf-typetools"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/lcdf-typetools"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list pkg-config texlive-libkpathsea))
+    (inputs '())
     (propagated-inputs (list texlive-glyphlist))
     (home-page "https://ctan.org/pkg/lcdf-typetools")
     (synopsis "Bundle of outline font manipulation tools")
