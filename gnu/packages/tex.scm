@@ -766,6 +766,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "axodraw2"
                           "chktex"
                           "cjkutils"
+                          "dvi2tty"
                           "dvipng"
                           "dvisvgm"
                           "kpathsea"
@@ -34035,18 +34036,45 @@ homebrewed classes and package files.")
 
 (define-public texlive-dvi2tty
   (package
+    (inherit texlive-bin)
     (name "texlive-dvi2tty")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/disdvi.1"
-                   "doc/man/man1/disdvi.man1.pdf"
-                   "doc/man/man1/dvi2tty.1"
-                   "doc/man/man1/dvi2tty.man1.pdf")
-             (base32
-              "108y0qxh13x0iivgsvkk4370f471p03nyl4x9nn7lng1wrsafp6h")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("dvi2tty"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-dvi2tty"
+                 (delete "--disable-dvi2tty" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/dvi2tty"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/dvi2tty"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list pkg-config texlive-libkpathsea))
+    (inputs (list texlive-libptexenc))
     (home-page "https://ctan.org/pkg/dvi2tty")
     (synopsis "Produce ASCII from DVI")
     (description
