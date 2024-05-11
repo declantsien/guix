@@ -705,6 +705,7 @@ and should be preferred to it whenever a package would otherwise depend on
                         '("axodraw2"
                           "chktex"
                           "cjkutils"
+                          "dvipng"
                           "dvisvgm"
                           "kpathsea"
                           "lacheck"
@@ -34082,20 +34083,47 @@ transforms between a DVI file and a text file.")
 
 (define-public texlive-dvipng
   (package
+    (inherit texlive-bin)
     (name "texlive-dvipng")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/dvipng/"
-                   "doc/info/dvipng.info"
-                   "doc/man/man1/dvigif.1"
-                   "doc/man/man1/dvigif.man1.pdf"
-                   "doc/man/man1/dvipng.1"
-                   "doc/man/man1/dvipng.man1.pdf")
-             (base32
-              "0r001q4p5569dagayds1c56y10ls6f6v7mmywiw81l995q16apxi")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("dvipng"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-dvipng"
+                 "--with-system-freetype2"
+                 "--with-system-gd"
+                 "--with-system-libpng"
+                 (delete "--disable-dvipng" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/dvipng"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/dvipng"
+                  (invoke "make" "install"))))))))
+    (inputs (list freetype gd libpng))
     (home-page "https://ctan.org/pkg/dvipng")
     (synopsis "DVI to PNG/GIF converter")
     (description
