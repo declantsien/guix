@@ -704,7 +704,8 @@ and should be preferred to it whenever a package would otherwise depend on
                 "--disable-chktex"
                 "--disable-dvisvgm"
                 "--disable-kpathsea"
-                "--disable-psutils"))
+                "--disable-psutils"
+                "--disable-upmendex"))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
@@ -45068,19 +45069,76 @@ make drawing easier, especially when drawing repeatedly.  The macros were
 chosen and developed with an emphasis on drawing graphs in economics.")
     (license license:lppl1.3c)))
 
+(define texlive-upmendex-bin
+  (package
+    (inherit texlive-bin)
+    (name "texlive-upmendex")
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs/" '())
+            (delete-other-directories "utils/" '())
+            (delete-other-directories "texk/" '("upmendex"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-upmendex"
+                 "--with-system-icu"
+                 (delete "--disable-upmendex" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/upmendex"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                (with-directory-excursion "texk/upmendex"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list pkg-config))
+    (inputs (list icu4c))))
+
 (define-public texlive-upmendex
   (package
     (name "texlive-upmendex")
     (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/upmendex.1"
-                   "doc/man/man1/upmendex.man1.pdf"
-                   "doc/support/upmendex/")
-             (base32
-              "0mj8nmqr3z7b802kvjmnkckq89l694an7s639yghf3b9b5v7xihx")))
+    (source
+     (texlive-origin name version
+                     (list "doc/man/man1/upmendex.1"
+                           "doc/man/man1/upmendex.man1.pdf"
+                           "doc/support/upmendex/")
+                     (base32
+                      "0mj8nmqr3z7b802kvjmnkckq89l694an7s639yghf3b9b5v7xihx")))
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
+    (arguments
+     (list
+      #:phases
+      #~(modify-phases %standard-phases
+          (add-after 'link-scripts 'install-bin
+            (lambda* (#:key inputs native-inputs #:allow-other-keys)
+              (let ((source
+                     #$(this-package-native-input "texlive-upmendex-bin")))
+                (with-directory-excursion (string-append #$output "/bin")
+                  (for-each (lambda (f) (install-file f "."))
+                            (find-files (string-append source "/bin")
+                                        (lambda (_ s)
+                                          (eq? 'regular (stat:type s))))))))))))
+    (native-inputs (list texlive-upmendex-bin))
     (home-page "https://ctan.org/pkg/upmendex")
     (synopsis "Multilingual index processor")
     (description
