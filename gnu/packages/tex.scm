@@ -71085,31 +71085,45 @@ handle complex tests.")
     ;; Texmf tree in TeX Live is incomplete, as it doesn't include
     ;; "xindy.mem", so it is not possible to use `texlive-origin'.  This file
     ;; isn't build by default by `texlive-bin' either.  Build it specially
-    ;; from `texlive-bin' source instead.
-    (inherit texlive-libkpathsea)
+    ;; from TEXLIVE-SOURCE instead.
+    (inherit texlive-bin)
     (name "texlive-xindy")
-    (version (number->string %texlive-revision))
-    (outputs '("out" "doc"))
-    (build-system gnu-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs/" '())
+            (delete-other-directories "utils/" '("xindy"))
+            (delete-other-directories "texk/" '())))))
     (arguments
-     (substitute-keyword-arguments (package-arguments texlive-libkpathsea)
-       ((#:out-of-source? _ #t) #t)
+     (substitute-keyword-arguments (package-arguments texlive-bin)
        ((#:configure-flags flags)
-        #~(cons "--enable-xindy" (delete "--enable-kpathsea" #$flags)))
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-xindy"
+                 (delete "--disable-xindy" #$flags)))
        ((#:phases _)
         #~(modify-phases %standard-phases
-            (replace 'install
+            ;; Building documentation require to generate font metrics, but
+            ;; HOME and therefore TEXMFVAR are unavailable.  Use a local
+            ;; TEXMFVAR instead.
+            (add-before 'build 'set-texmfvar
               (lambda _
-                (with-directory-excursion "utils/xindy/"
-                  (invoke "make")
-                  (mkdir-p (string-append #$output "/bin"))
-                  (invoke "make" "install")
-                  (let ((out (string-append #$output "/share"))
-                        (doc (string-append #$output:doc "/share/texmf-dist")))
-                    (mkdir-p doc)
-                    (with-directory-excursion doc
-                      (rename-file (string-append out "/texmf-dist/doc") "doc")
-                      (rename-file (string-append out "/man") "doc/man"))))))
+                (setenv "TEXMFVAR" (string-append (getcwd) "/texmf-var"))))
+            ;; XXX: Install process does not create this directory.
+            (add-before 'install 'create-missing-directory
+              (lambda _
+                (mkdir-p (string-append #$output "/bin"))))
             (add-after 'install 'patch-clisp-location
               (lambda* (#:key inputs #:allow-other-keys)
                 ;; The scripts are encoded in ISO-8859-1 (or iso-latin-1).
