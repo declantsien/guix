@@ -774,6 +774,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "kpathsea"
                           "lacheck"
                           "lcdf-typetools"
+                          "ps2eps"
                           "psutils"
                           "t1utils"
                           "upmendex"
@@ -42052,32 +42053,52 @@ and glued together.  This will lead to a physical product box.")
 
 (define-public texlive-ps2eps
   (package
+    (inherit texlive-bin)
     (name "texlive-ps2eps")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/bbox.1"
-                   "doc/man/man1/bbox.man1.pdf"
-                   "doc/man/man1/ps2eps.1"
-                   "doc/man/man1/ps2eps.man1.pdf"
-                   "scripts/ps2eps/")
-             (base32
-              "1anrvgs0hd3790dwpxqal0c2drjmvh93vnyqap40rvp8axwi0a6n")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("ps2eps"))
+            (delete-other-directories "texk" '())))))
     (arguments
-     (list #:link-scripts #~(list "ps2eps.pl")
-           #:phases
-           #~(modify-phases %standard-phases
-               (add-after 'unpack 'configure-ghostscript-executable
-                 ;; ps2eps.pl uses the "gswin32c" ghostscript executable on
-                 ;; Windows, and the "gs" ghostscript executable on Unix.  It
-                 ;; detects Unix by checking for the existence of the
-                 ;; "/usr/bin" directory.  Since Guix System does not have
-                 ;; "/usr/bin", it is also detected as Windows.
-                 (lambda _
-                   (substitute* "scripts/ps2eps/ps2eps.pl"
-                     (("gswin32c") "gs")))))))
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-ps2eps"
+                 (delete "--disable-ps2eps" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (add-after 'unpack 'configure-ghostscript-executable
+              ;; ps2eps.pl uses the "gswin32c" ghostscript executable on
+              ;; Windows, and the "gs" ghostscript executable on Unix.  It
+              ;; detects Unix by checking for the existence of the "/usr/bin"
+              ;; directory.  Since Guix System does not have "/usr/bin", it is
+              ;; also detected as a Windows system :(.
+              (lambda _
+                (substitute* "utils/ps2eps/ps2eps-src/bin/ps2eps.pl"
+                  (("gswin32c") "gs"))))
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/ps2eps"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/ps2eps"
+                  (invoke "make" "install"))))))))
     (inputs (list perl))
     (home-page "https://ctan.org/pkg/ps2eps")
     (synopsis "Produce Encapsulated PostScript from PostScript")
