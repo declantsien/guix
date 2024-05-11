@@ -707,6 +707,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "cjkutils"
                           "dvisvgm"
                           "kpathsea"
+                          "lacheck"
                           "psutils"
                           "upmendex"
                           "xindy"))))
@@ -38356,16 +38357,45 @@ generated code can be included in any LaTeX document.")
 
 (define-public texlive-lacheck
   (package
+    (inherit texlive-bin)
     (name "texlive-lacheck")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/lacheck.1"
-                   "doc/man/man1/lacheck.man1.pdf")
-             (base32
-              "1hhx65yd800bl3y2sq20lix60wd2b2j3k7n9s788mlsn8b0p7yq3")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("lacheck"))
+            (delete-other-directories "texk" '())))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-lacheck"
+                 (delete "--disable-lacheck" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/lacheck"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/lacheck"
+                  (invoke "make" "install"))))))))
+    (native-inputs '())
+    (inputs '())
     (home-page "https://ctan.org/pkg/lacheck")
     (synopsis "LaTeX checker")
     (description
