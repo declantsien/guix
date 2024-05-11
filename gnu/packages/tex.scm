@@ -767,6 +767,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "axodraw2"
                           "chktex"
                           "cjkutils"
+                          "devnag"
                           "dvi2tty"
                           "dvipng"
                           "dvisvgm"
@@ -32252,6 +32253,46 @@ Manuscripts Submitted to Biomedical Journals (also known as the Vancouver
 style).")
     (license license:lppl1.3+)))
 
+(define texlive-velthuis-bin
+  (package
+    (inherit texlive-bin)
+    (name "texlive-velthuis-bin")
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '("devnag"))
+            (delete-other-directories "texk" '())))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-devnag"
+                 (delete "--disable-devnag" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/devnag"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/devnag"
+                  (invoke "make" "install"))))))))))
+
 (define-public texlive-velthuis
   (package
     (name "texlive-velthuis")
@@ -32274,7 +32315,16 @@ style).")
               "0h9maci6b65x7zy13v5j4vlr07lnghiwckh7bn4ix7d1wmh74bij")))
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
-    (native-inputs (list texlive-metafont))
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'install 'install-bin
+                 (lambda _
+                   (let ((source
+                          #$(this-package-native-input "texlive-velthuis-bin")))
+                     (copy-recursively (string-append source "/bin")
+                                       (string-append #$output "/bin"))))))))
+    (native-inputs (list texlive-metafont texlive-velthuis-bin))
     (propagated-inputs (list texlive-xetex-devanagari))
     (home-page "https://ctan.org/pkg/devanagari")
     (synopsis "Typeset Devanagari")
