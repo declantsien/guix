@@ -702,7 +702,8 @@ and should be preferred to it whenever a package would otherwise depend on
                        '())
                 ;; Disable tools built in other packages.
                 #$@(map (lambda (p) (string-append "--disable-" p))
-                        '("axodraw2"
+                        '("afm2pl"
+                          "axodraw2"
                           "chktex"
                           "cjkutils"
                           "dvipng"
@@ -1806,6 +1807,48 @@ Gyre Pagella, and the Latin Modern fonts are supported.  The other fonts in
 the TeX Gyre bundle do not need this support.")
     (license (list license:gfl1.0 license:gpl3+))))
 
+(define texlive-afm2pl-bin
+  (package
+    (inherit texlive-bin)
+    (name "texlive-afm2pl-bin")
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            (delete-other-directories "texk" '("afm2pl"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-afm2pl"
+                 (delete "--disable-afm2pl" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/afm2pl"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda* (#:key inputs native-inputs #:allow-other-keys)
+                (with-directory-excursion "texk/afm2pl"
+                  (invoke "make" "install"))))))))
+    (native-inputs (list pkg-config texlive-libkpathsea))
+    (inputs '())))
+
 (define-public texlive-afm2pl
   (package
     (name "texlive-afm2pl")
@@ -1820,6 +1863,16 @@ the TeX Gyre bundle do not need this support.")
               "19llzzr4kmmyf7l18ngx1rhaqaqvgm3md924m4dxcv7nmrvga2b2")))
     (outputs '("out" "doc"))
     (build-system texlive-build-system)
+    (arguments
+     (list #:phases
+           #~(modify-phases %standard-phases
+               (add-after 'install 'install-bin
+                 (lambda _
+                   (let ((source
+                          #$(this-package-native-input "texlive-afm2pl-bin")))
+                     (copy-recursively (string-append source "/bin")
+                                       (string-append #$output "/bin"))))))))
+    (native-inputs (list texlive-afm2pl-bin))
     (home-page "https://ctan.org/pkg/afm2pl")
     (synopsis "Convert AFM to TeX property list (@file{.pl}) metrics")
     (description
