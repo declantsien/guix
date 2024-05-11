@@ -702,8 +702,14 @@ and should be preferred to it whenever a package would otherwise depend on
                        '())
                 ;; Disable tools built in other packages.
                 #$@(map (lambda (p) (string-append "--disable-" p))
-                        '("axodraw2" "chktex" "dvisvgm" "kpathsea" "psutils"
-                          "upmendex" "xindy"))))
+                        '("axodraw2"
+                          "chktex"
+                          "cjkutils"
+                          "dvisvgm"
+                          "kpathsea"
+                          "psutils"
+                          "upmendex"
+                          "xindy"))))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
@@ -9222,36 +9228,50 @@ adjust locations and kerning of CJK punctuation marks.")
 
 (define-public texlive-cjkutils
   (package
+    (inherit texlive-bin)
     (name "texlive-cjkutils")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/bg5conv.1"
-                   "doc/man/man1/bg5conv.man1.pdf"
-                   "doc/man/man1/cef5conv.1"
-                   "doc/man/man1/cef5conv.man1.pdf"
-                   "doc/man/man1/cefconv.1"
-                   "doc/man/man1/cefconv.man1.pdf"
-                   "doc/man/man1/cefsconv.1"
-                   "doc/man/man1/cefsconv.man1.pdf"
-                   "doc/man/man1/extconv.1"
-                   "doc/man/man1/extconv.man1.pdf"
-                   "doc/man/man1/hbf2gf.1"
-                   "doc/man/man1/hbf2gf.man1.pdf"
-                   "doc/man/man1/sjisconv.1"
-                   "doc/man/man1/sjisconv.man1.pdf"
-                   "hbf2gf/")
-             (base32
-              "0by2g05xv5dndnd78jz9y73fyswqhfvcbzcw8rzhvpvd6inrcdq8")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs/" '())
+            (delete-other-directories "utils/" '())
+            (delete-other-directories "texk/" '("cjkutils"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-cjkutils-x"
+                 (delete "--disable-cjkutils" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/cjkutils"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/cjkutils"
+                  (invoke "make" "install"))))))))
     (home-page "https://ctan.org/pkg/cjk")
     (synopsis "CJK language support")
     (description
      "CJK is a macro package for LaTeX, providing simultaneous support for
 various Asian scripts in many encodings (including Unicode): Chinese (both
 traditional and simplified), Japanese, Korean and Thai.  A special add-on
-feature is an interface to the Emacs editor (cjk-enc.el) which gives
+feature is an interface to the Emacs editor (@file{cjk-enc.el}) which gives
 simultaneous, easy-to-use support to a bunch of other scripts in addition to
 the above --- Cyrillic, Greek, Latin-based scripts, Russian and Vietnamese are
 supported.")
