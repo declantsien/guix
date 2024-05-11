@@ -99,6 +99,7 @@
   #:use-module (gnu packages ruby)
   #:use-module (gnu packages shells)
   #:use-module (gnu packages tcl)
+  #:use-module (gnu packages tls)
   #:use-module (gnu packages base)
   #:use-module (gnu packages gawk)
   #:use-module (gnu packages web)
@@ -643,7 +644,6 @@ and should be preferred to it whenever a package would otherwise depend on
        (modules '((guix build utils)
                   (ice-9 ftw)))
        (snippet
-        ;; TODO: Unbundle stuff in texk/dvisvgm/dvisvgm-src/libs too.
         #~(with-directory-excursion "libs"
             (let ((preserved-directories '("." ".." "lua53" "luajit" "pplib" "xpdf")))
               ;; Delete bundled software, except Lua which cannot easily be
@@ -701,8 +701,9 @@ and should be preferred to it whenever a package would otherwise depend on
                          "--disable-mfluajit")
                        '())
                 ;; Disable tools built in other packages.
-                "--disable-kpathsea"
                 "--disable-chktex"
+                "--disable-dvisvgm"
+                "--disable-kpathsea"
                 "--disable-psutils"))
       #:phases
       #~(modify-phases %standard-phases
@@ -34130,16 +34131,66 @@ paper feed errors!")
 
 (define-public texlive-dvisvgm
   (package
+    (inherit texlive-bin)
     (name "texlive-dvisvgm")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/dvisvgm.1"
-                   "doc/man/man1/dvisvgm.man1.pdf")
-             (base32
-              "1fz3sa7p9wk2g1v0bpy87vz7nxwrh5bsfl4m734n6lhsh1bkj6fb")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root keep)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir
+                       "."
+                       (lambda (file)
+                         (and (not (member file (append keep '("." ".."))))
+                              (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "utils" '())
+            ;; TODO: Unbundle stuff in texk/dvisvgm/dvisvgm-src/libs too.
+            (delete-other-directories "texk" '("dvisvgm"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-dvisvgm"
+                 "--with-system-freetype2"
+                 "--with-system-libgs"
+                 "--with-system-potrace"
+                 "--with-system-zlib"
+                 (delete "--disable-dvisvgm" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            ;; XXX: Ghostscript is detected, but HAVE_LIBGS is never set, so
+            ;; the appropriate linker flags are not added.
+            (add-after 'unpack 'patch-dvisvgm-build-files
+              (lambda _
+                (substitute* "texk/dvisvgm/configure"
+                  (("^have_libgs=yes" all)
+                   (string-append all "\nHAVE_LIBGS=1")))))
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "texk/dvisvgm"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "texk/dvisvgm"
+                  (invoke "make" "install"))))))))
+    (inputs
+     (list brotli
+           clipper
+           freetype
+           ghostscript
+           openssl
+           potrace
+           woff2
+           xxhash
+           zlib))
     (home-page "https://ctan.org/pkg/dvisvgm")
     (synopsis
      "Convert DVI, EPS, and PDF files to Scalable Vector Graphics format (SVG)")
