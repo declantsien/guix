@@ -710,6 +710,7 @@ and should be preferred to it whenever a package would otherwise depend on
                           "lacheck"
                           "lcdf-typetools"
                           "psutils"
+                          "t1utils"
                           "upmendex"
                           "xindy"))))
       #:phases
@@ -42806,26 +42807,45 @@ known as railroad diagrams.")
 
 (define-public texlive-t1utils
   (package
+    (inherit texlive-bin)
     (name "texlive-t1utils")
-    (version (number->string %texlive-revision))
-    (source (texlive-origin
-             name version
-             (list "doc/man/man1/t1ascii.1"
-                   "doc/man/man1/t1ascii.man1.pdf"
-                   "doc/man/man1/t1asm.1"
-                   "doc/man/man1/t1asm.man1.pdf"
-                   "doc/man/man1/t1binary.1"
-                   "doc/man/man1/t1binary.man1.pdf"
-                   "doc/man/man1/t1disasm.1"
-                   "doc/man/man1/t1disasm.man1.pdf"
-                   "doc/man/man1/t1mac.1"
-                   "doc/man/man1/t1mac.man1.pdf"
-                   "doc/man/man1/t1unmac.1"
-                   "doc/man/man1/t1unmac.man1.pdf")
-             (base32
-              "0hdk57179nn57wnmvr3jasjavkvmrn6ryph6jvjhsfqprn7bhf1y")))
-    (outputs '("out" "doc"))
-    (build-system texlive-build-system)
+    (source
+     (origin
+       (inherit texlive-source)
+       (modules '((guix build utils)
+                  (ice-9 ftw)))
+       (snippet
+        #~(let ((delete-other-directories
+                 (lambda (root dirs)
+                   (with-directory-excursion root
+                     (for-each
+                      delete-file-recursively
+                      (scandir "."
+                               (lambda (file)
+                                 (and (not (member file (append '("." "..") dirs)))
+                                      (eq? 'directory (stat:type (stat file)))))))))))
+            (delete-other-directories "libs" '())
+            (delete-other-directories "texk" '())
+            (delete-other-directories "utils" '("t1utils"))))))
+    (arguments
+     (substitute-keyword-arguments (package-arguments texlive-bin)
+       ((#:configure-flags flags)
+        #~(cons* "--disable-all-pkgs"
+                 "--enable-t1utils"
+                 (delete "--disable-t1utils" #$flags)))
+       ((#:phases _)
+        #~(modify-phases %standard-phases
+            (replace 'check
+              (lambda* (#:key tests? #:allow-other-keys)
+                (when tests?
+                  (with-directory-excursion "utils/t1utils"
+                    (invoke "make" "check")))))
+            (replace 'install
+              (lambda _
+                (with-directory-excursion "utils/t1utils"
+                  (invoke "make" "install"))))))))
+    (native-inputs '())
+    (inputs '())
     (home-page "https://ctan.org/pkg/t1utils")
     (synopsis "Simple Type 1 font manipulation programs")
     (description
