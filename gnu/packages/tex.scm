@@ -701,12 +701,9 @@ and should be preferred to it whenever a package would otherwise depend on
                          "--disable-mfluajit")
                        '())
                 ;; Disable tools built in other packages.
-                "--disable-chktex"
-                "--disable-dvisvgm"
-                "--disable-kpathsea"
-                "--disable-psutils"
-                "--disable-upmendex"
-                "--disable-xindy"))
+                #$@(map (lambda (p) (string-append "--disable-" p))
+                        '("axodraw2" "chktex" "dvisvgm" "kpathsea" "psutils"
+                          "upmendex" "xindy"))))
       #:phases
       #~(modify-phases %standard-phases
           (add-after 'unpack 'locate-external-kpathsea
@@ -4086,8 +4083,6 @@ other parts.")
       #:tests? #true
       #:phases
       #~(modify-phases %standard-phases
-          ;; TODO: Since we're building "axohelp" from source here, it can be
-          ;; removed from `texlive-bin' (world rebuild).
           (add-after 'unpack 'build-axohelp
             (lambda* (#:key tests? #:allow-other-keys)
               (with-directory-excursion "source/latex/axodraw2"
